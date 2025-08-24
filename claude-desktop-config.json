@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "lineary": {
+      "command": "python3",
+      "args": ["/home/jarvis/projects/AI-Linear/lineary-mcp-server.py"],
+      "env": {
+        "LINEARY_API_URL": "https://ai-linear.blockonauts.io/api",
+        "LINEARY_DEBUG": "false"
+      }
+    }
+  }
+}

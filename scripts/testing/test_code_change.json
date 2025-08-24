@@ -1,0 +1,36 @@
+{
+  "user_id": "claude_user_001",
+  "project_id": "betty_test",
+  "session_id": "550e8400-e29b-41d4-a716-446655440001",
+  "code_change_data": {
+    "tool_used": "Write",
+    "files_modified": [
+      {
+        "file_path": "/backend/auth/jwt.py",
+        "operation": "created",
+        "lines_changed": {
+          "added": 85,
+          "modified": 0,
+          "deleted": 0
+        },
+        "change_intent": "Create JWT authentication module",
+        "change_category": "feature_addition",
+        "code_snippet": "def create_access_token(data: dict):\n    to_encode = data.copy()\n    expire = datetime.utcnow() + timedelta(minutes=15)\n    to_encode.update({'exp': expire})\n    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)"
+      }
+    ],
+    "technical_context": {
+      "frameworks_used": ["FastAPI", "python-jose"],
+      "patterns_applied": ["dependency_injection", "middleware"],
+      "security_implications": ["token_validation", "secure_key_storage"],
+      "performance_implications": [],
+      "dependencies_added": ["python-jose[cryptography]"],
+      "dependencies_removed": []
+    },
+    "success_indicators": ["tests_passed", "auth_endpoints_working"],
+    "error_messages": [],
+    "validation_performed": ["security_review", "unit_tests"]
+  },
+  "part_of_conversation": true,
+  "change_sequence": 1,
+  "related_conversation_id": "20303e35-dde5-44ec-829d-51dac75993ff"
+}

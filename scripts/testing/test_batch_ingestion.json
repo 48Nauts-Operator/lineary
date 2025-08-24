@@ -1,0 +1,48 @@
+{
+  "user_id": "claude_user_001",
+  "project_id": "betty_demo",
+  "session_id": "550e8400-e29b-41d4-a716-446655440010",
+  "conversations": [
+    {
+      "user_id": "claude_user_001",
+      "project_id": "betty_demo",
+      "session_id": "550e8400-e29b-41d4-a716-446655440010",
+      "conversation_data": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need to implement a REST API for managing user profiles",
+            "timestamp": "2025-08-04T22:25:00Z",
+            "context": {
+              "user_intent": "create user management API",
+              "problem_category": "api",
+              "technologies_mentioned": ["REST", "FastAPI", "SQLAlchemy"]
+            }
+          },
+          {
+            "role": "assistant",
+            "content": "I'll help you create a comprehensive user profile API. Let's start with the database model and then build the endpoints...",
+            "timestamp": "2025-08-04T22:25:30Z",
+            "context": {
+              "technologies_mentioned": ["FastAPI", "SQLAlchemy", "Pydantic"]
+            }
+          }
+        ],
+        "outcome": "successful",
+        "summary": "Created complete user profile REST API with CRUD operations",
+        "key_decisions": ["Use SQLAlchemy for ORM", "Implement pagination for list endpoints"],
+        "lessons_learned": ["Input validation is crucial", "Database indexes improve query performance"],
+        "technologies_used": ["FastAPI", "SQLAlchemy", "Pydantic", "PostgreSQL"],
+        "patterns_applied": ["REST API design", "repository pattern", "dependency_injection"]
+      },
+      "claude_version": "claude-3-5-sonnet",
+      "environment": "development",
+      "duration_minutes": 25
+    }
+  ],
+  "batch_metadata": {
+    "batch_type": "demo_ingestion",
+    "capture_source": "claude_code_session"
+  },
+  "processing_priority": 1
+}

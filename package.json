@@ -1,0 +1,26 @@
+{
+  "name": "lineary-mcp-server",
+  "version": "1.0.0",
+  "description": "LINEARY Memory System MCP Server",
+  "main": "scripts/integration/lineary_mcp_official.js",
+  "bin": {
+    "lineary-mcp-server": "./scripts/integration/lineary_mcp_official.js"
+  },
+  "scripts": {
+    "start": "node scripts/integration/lineary_mcp_official.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.1",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": [
+    "mcp",
+    "memory",
+    "lineary"
+  ],
+  "author": "LINEARY Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@vscode/vsce": "^2.19.0"
+  }
+}

@@ -1,0 +1,72 @@
+[
+  {
+    "test": "Basic API Health Check",
+    "success": true,
+    "message": "API version 3.0.0 is healthy",
+    "timestamp": "2025-08-07T06:57:37.408253",
+    "data": null
+  },
+  {
+    "test": "Database Connectivity",
+    "success": false,
+    "message": "PostgreSQL connection failed",
+    "timestamp": "2025-08-07T06:57:37.426995",
+    "data": "Error response from daemon: No such container: docs137-postgres\n"
+  },
+  {
+    "test": "Frontend Accessibility",
+    "success": true,
+    "message": "Frontend is accessible at http://localhost:3333",
+    "timestamp": "2025-08-07T06:57:37.429549",
+    "data": null
+  },
+  {
+    "test": "API Documentation",
+    "success": true,
+    "message": "Swagger docs accessible at http://localhost:8000/docs",
+    "timestamp": "2025-08-07T06:57:37.431472",
+    "data": null
+  },
+  {
+    "test": "Financial Module Health",
+    "success": true,
+    "message": "Financial module v1.0.0 is healthy",
+    "timestamp": "2025-08-07T06:57:37.433177",
+    "data": null
+  },
+  {
+    "test": "Financial Accounts API",
+    "success": false,
+    "message": "Status code: 500",
+    "timestamp": "2025-08-07T06:57:37.437662",
+    "data": "{\"detail\":\"An unexpected error occurred. Please contact support if the problem persists.\",\"error_id\":\"39eaa571-12ae-44d8-a551-e931e58ef72a\",\"request_id\":\"b8d61943-b7a5-4a87-b010-b48d0129545b\"}"
+  },
+  {
+    "test": "Financial Categories API",
+    "success": false,
+    "message": "Status code: 500",
+    "timestamp": "2025-08-07T06:57:37.440408",
+    "data": null
+  },
+  {
+    "test": "Financial Transactions API",
+    "success": false,
+    "message": "Status code: 500",
+    "timestamp": "2025-08-07T06:57:37.443021",
+    "data": null
+  },
+  {
+    "test": "Financial Dashboard API",
+    "success": false,
+    "message": "Status code: 500",
+    "timestamp": "2025-08-07T06:57:37.445256",
+    "data": "{\"detail\":\"'AsyncSession' object has no attribute 'query'\"}"
+  },
+  {
+    "test": "Invoice Management API",
+    "success": true,
+    "message": "Retrieved 5 invoices",
+    "timestamp": "2025-08-07T06:57:37.500735",
+    "data": null
+  }
+]

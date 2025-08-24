@@ -1,0 +1,151 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.test.js
+*.spec.js
+
+# Production builds
+build/
+dist/
+out/
+*.production.js
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.vim
+.DS_Store
+Thumbs.db
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+data/
+postgres-data/
+redis-data/
+
+# Uploads & Media
+uploads/
+media/
+public/uploads/
+temp/
+tmp/
+
+# Documentation (internal only)
+docs/
+docs-internal/
+docs-private/
+*.internal.md
+ROADMAP.md
+ENTERPRISE-FEATURES.md
+
+# OAuth Secrets
+oauth-config.json
+github-app.pem
+gitlab-app.pem
+
+# Backups
+backups/
+*.backup
+*.dump
+*.sql.gz
+
+# Cache
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.turbo/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv
+
+# Docker
+docker-compose.override.yml
+docker-compose.dev.yml
+.dockerignore.local
+
+# Certificates
+*.pem
+*.key
+*.cert
+*.crt
+ssl/
+
+# Session files
+sessions/
+*.session
+
+# Lock files (keep package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# MCP Server builds
+mcp-server/build/
+mcp-server/dist/
+
+# Test results
+test-results/
+e2e-results/
+cypress/screenshots/
+cypress/videos/
+
+# Analytics & Monitoring
+analytics/
+monitoring/
+metrics/
+
+# AI Models (if cached locally)
+models/
+*.onnx
+*.pt
+*.pth
+*.h5
+
+# License keys (Enterprise)
+license.key
+enterprise.key
+*.license
