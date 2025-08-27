@@ -1,0 +1,338 @@
+{
+  "name": "lineary-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Lineary project management system",
+  "protocol": "mcp",
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true,
+    "notifications": true
+  },
+  "tools": [
+    {
+      "name": "lineary_create_issue",
+      "description": "Create a new issue/task in Lineary project management",
+      "parameters": {
+        "type": "object",
+        "required": ["title", "project_id"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Clear, actionable issue title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description in markdown format"
+          },
+          "project_id": {
+            "type": "string",
+            "description": "UUID of the project"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["backlog", "todo", "in_progress", "in_review", "testing", "done", "cancelled", "blocked"],
+            "default": "backlog",
+            "description": "Issue status (backlog=📋, todo=⭕, in_progress=🔄, in_review=👁️, testing=🧪, done=✅, cancelled=⛔, blocked=🚧)"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "default": 3,
+            "description": "Priority level: 1=🔴 Urgent, 2=🟠 High, 3=🟡 Medium, 4=🟢 Low, 5=⚪ Minimal"
+          },
+          "story_points": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 13,
+            "description": "Effort estimation in story points (Fibonacci: 1,2,3,5,8,13)"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Labels like: bug, feature, improvement, documentation, performance"
+          },
+          "assignee_id": {
+            "type": "string",
+            "description": "UUID of assigned user"
+          }
+        }
+      }
+    },
+    {
+      "name": "lineary_update_issue",
+      "description": "Update an existing issue's status, priority, or other fields",
+      "parameters": {
+        "type": "object",
+        "required": ["issue_id"],
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "description": "UUID of the issue to update"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["backlog", "todo", "in_progress", "in_review", "testing", "done", "cancelled", "blocked"],
+            "description": "New status for the issue"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "New priority level"
+          },
+          "story_points": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 13,
+            "description": "Updated effort estimation"
+          },
+          "assignee_id": {
+            "type": "string",
+            "description": "Reassign to different user"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Add a comment explaining the update"
+          }
+        }
+      }
+    },
+    {
+      "name": "lineary_list_issues",
+      "description": "List and filter issues",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "description": "Filter by project UUID"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["backlog", "todo", "in_progress", "in_review", "testing", "done", "cancelled", "blocked"],
+            "description": "Filter by status"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Filter by priority"
+          },
+          "assignee_id": {
+            "type": "string",
+            "description": "Filter by assignee"
+          },
+          "label": {
+            "type": "string",
+            "description": "Filter by label"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 50,
+            "description": "Maximum number of results"
+          }
+        }
+      }
+    },
+    {
+      "name": "lineary_create_project",
+      "description": "Create a new project",
+      "parameters": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Project name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "default": "#8B5CF6",
+            "description": "Project color in hex format"
+          }
+        }
+      }
+    },
+    {
+      "name": "lineary_create_sprint",
+      "description": "Create a new sprint for a project",
+      "parameters": {
+        "type": "object",
+        "required": ["project_id", "name"],
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "description": "UUID of the project"
+          },
+          "name": {
+            "type": "string",
+            "description": "Sprint name (e.g., 'Sprint 23')"
+          },
+          "goal": {
+            "type": "string",
+            "description": "Sprint goal description"
+          },
+          "duration_days": {
+            "type": "integer",
+            "default": 14,
+            "description": "Sprint duration in days"
+          },
+          "issue_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Issue UUIDs to include in sprint"
+          }
+        }
+      }
+    },
+    {
+      "name": "lineary_start_sprint",
+      "description": "Start an active sprint",
+      "parameters": {
+        "type": "object",
+        "required": ["sprint_id"],
+        "properties": {
+          "sprint_id": {
+            "type": "string",
+            "description": "UUID of the sprint to start"
+          }
+        }
+      }
+    },
+    {
+      "name": "lineary_complete_sprint",
+      "description": "Complete and close a sprint",
+      "parameters": {
+        "type": "object",
+        "required": ["sprint_id"],
+        "properties": {
+          "sprint_id": {
+            "type": "string",
+            "description": "UUID of the sprint to complete"
+          },
+          "move_incomplete_to_backlog": {
+            "type": "boolean",
+            "default": true,
+            "description": "Move incomplete issues to backlog"
+          },
+          "retrospective_notes": {
+            "type": "string",
+            "description": "Sprint retrospective notes"
+          }
+        }
+      }
+    },
+    {
+      "name": "lineary_generate_documentation",
+      "description": "Generate AI-powered documentation for a project or feature",
+      "parameters": {
+        "type": "object",
+        "required": ["project_id", "type"],
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "description": "UUID of the project"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["overview", "api", "guides", "architecture", "deployment", "troubleshooting"],
+            "description": "Type of documentation to generate"
+          },
+          "feature_id": {
+            "type": "string",
+            "description": "Optional: specific feature/issue to document"
+          },
+          "format": {
+            "type": "string",
+            "enum": ["markdown", "html", "pdf"],
+            "default": "markdown",
+            "description": "Output format"
+          }
+        }
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "lineary_projects",
+      "description": "List of all available projects",
+      "uri": "lineary://projects",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "lineary_active_sprints",
+      "description": "Currently active sprints across all projects",
+      "uri": "lineary://sprints/active",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "lineary_my_issues",
+      "description": "Issues assigned to the current user",
+      "uri": "lineary://issues/assigned",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "lineary_backlog",
+      "description": "Complete backlog of unassigned issues",
+      "uri": "lineary://backlog",
+      "mimeType": "application/json"
+    },
+    {
+      "name": "lineary_documentation",
+      "description": "Project documentation library",
+      "uri": "lineary://docs",
+      "mimeType": "application/json"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "project_manager",
+      "description": "Act as a Lineary project manager",
+      "prompt": "You are an AI project manager using Lineary. Your responsibilities include:\n\n1. Creating and managing issues with clear titles and descriptions\n2. Planning and executing sprints based on team capacity\n3. Tracking progress and updating issue statuses\n4. Generating documentation for completed features\n\nAlways use appropriate status icons:\n- backlog (📋) - Not started\n- todo (⭕) - Ready to work\n- in_progress (🔄) - Being worked on\n- in_review (👁️) - Under review\n- testing (🧪) - In testing\n- done (✅) - Completed\n- blocked (🚧) - Blocked\n- cancelled (⛔) - Won't do\n\nPriority levels:\n- 1 (🔴) - Urgent/Critical\n- 2 (🟠) - High\n- 3 (🟡) - Medium\n- 4 (🟢) - Low\n- 5 (⚪) - Minimal\n\nMaintain clear communication through comments and regular status updates."
+    },
+    {
+      "name": "sprint_planner",
+      "description": "Plan optimal sprints based on capacity",
+      "prompt": "You are a sprint planning specialist for Lineary. When planning sprints:\n\n1. Analyze team velocity from previous sprints\n2. Select issues based on priority and dependencies\n3. Ensure balanced workload (aim for 80% capacity)\n4. Group related issues together\n5. Define clear sprint goals\n6. Consider technical debt and maintenance\n\nUse story points (1,2,3,5,8,13) for estimation based on:\n- Complexity\n- Effort required\n- Uncertainty\n- Dependencies\n\nCreate sprints that deliver value incrementally while maintaining sustainable pace."
+    },
+    {
+      "name": "issue_creator",
+      "description": "Create well-structured issues",
+      "prompt": "You are an expert at creating clear, actionable issues in Lineary. For each issue:\n\n1. **Title**: Use imperative mood (e.g., 'Add user authentication')\n2. **Description**: Include:\n   - Problem statement\n   - Acceptance criteria\n   - Technical notes\n   - Dependencies\n3. **Priority**: Set based on:\n   - Business impact\n   - User value\n   - Technical risk\n   - Time sensitivity\n4. **Labels**: Add relevant tags:\n   - Type: bug, feature, improvement\n   - Area: frontend, backend, database\n   - Priority: critical, high, medium, low\n5. **Story Points**: Estimate using Fibonacci (1,2,3,5,8,13)\n\nEnsure issues are atomic, testable, and valuable."
+    }
+  ],
+  "notifications": {
+    "subscribe": [
+      "issue.created",
+      "issue.updated",
+      "issue.status_changed",
+      "sprint.started",
+      "sprint.completed",
+      "comment.added"
+    ]
+  },
+  "configuration": {
+    "api_endpoint": "https://ai-linear.blockonauts.io/api",
+    "auth_type": "bearer",
+    "rate_limit": {
+      "requests_per_hour": 1000,
+      "burst_limit": 100
+    },
+    "retry": {
+      "max_attempts": 3,
+      "backoff_ms": 1000,
+      "max_backoff_ms": 30000
+    }
+  }
+}

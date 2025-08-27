@@ -5,7 +5,12 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const Redis = require('redis');
+const TokenEstimator = require('./services/tokenEstimator');
+const docsRouter = require('./routes/docs');
 const app = express();
+
+// Initialize services
+const tokenEstimator = new TokenEstimator();
 
 // Configuration
 const PORT = process.env.PORT || 8000;
@@ -345,20 +350,32 @@ app.post('/api/issues', async (req, res) => {
       finalPrompt = `Task: ${title}\n\nContext: ${description}\n\nRequirements:\n- Implement efficiently\n- Include tests\n- Document changes\n\nSuccess Criteria:\n- All tests pass\n- Code review approved\n- Documentation updated`;
     }
     
-    // AI estimation (placeholder - integrate with actual AI)
-    const storyPoints = Math.floor(Math.random() * 8) + 1;
-    const estimatedHours = storyPoints * 2;
+    // Calculate story points if not provided
+    const storyPoints = req.body.story_points || Math.ceil(description ? description.length / 200 : 3);
+    
+    // Use TokenEstimator for accurate predictions
+    const estimation = tokenEstimator.estimateIssueTokens({
+      title,
+      description,
+      story_points: storyPoints,
+      priority: priority || 3,
+      ai_docs_generated: true
+    });
+    
+    const estimatedHours = Math.ceil(estimation.estimated_minutes / 60);
     
     const result = await pool.query(
       `INSERT INTO issues (
         project_id, title, description, priority, 
         parent_issue_id, depends_on, start_date, end_date,
-        story_points, estimated_hours, status, ai_prompt
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+        story_points, estimated_hours, status, ai_prompt,
+        token_cost, ai_confidence
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
       [
         project_id, title, description, priority || 3,
         parent_issue_id, depends_on || [], start_date, end_date,
-        storyPoints, estimatedHours, 'backlog', finalPrompt
+        storyPoints, estimatedHours, 'backlog', finalPrompt,
+        estimation.token_cost, estimation.ai_confidence
       ]
     );
     
@@ -422,6 +439,51 @@ app.get('/api/issues/:id/activities', async (req, res) => {
       [req.params.id]
     );
     res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Estimate or re-estimate token cost for an issue
+app.post('/api/issues/:id/estimate-tokens', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Fetch the issue
+    const issueResult = await pool.query(
+      'SELECT * FROM issues WHERE id = $1',
+      [id]
+    );
+    
+    if (issueResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Issue not found' });
+    }
+    
+    const issue = issueResult.rows[0];
+    
+    // Calculate token estimation
+    const estimation = tokenEstimator.estimateIssueTokens(issue);
+    
+    // Update the issue with new estimates
+    await pool.query(
+      `UPDATE issues 
+       SET token_cost = $1, 
+           ai_confidence = $2,
+           estimated_hours = $3
+       WHERE id = $4`,
+      [
+        estimation.token_cost,
+        estimation.ai_confidence,
+        Math.ceil(estimation.estimated_minutes / 60),
+        id
+      ]
+    );
+    
+    res.json({
+      issue_id: id,
+      ...estimation,
+      estimated_cost_usd: tokenEstimator.calculateCost(estimation.token_cost)
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -509,7 +571,7 @@ app.get('/api/sprints', async (req, res) => {
 });
 
 app.post('/api/sprints', async (req, res) => {
-  const { name, project_id, start_date, end_date, issue_ids } = req.body;
+  const { name, project_id, start_date, end_date, duration_hours, issue_ids } = req.body;
   try {
     // Calculate planned story points
     let plannedPoints = 0;
@@ -521,11 +583,16 @@ app.post('/api/sprints', async (req, res) => {
       plannedPoints = pointsResult.rows[0].total || 0;
     }
     
+    // For continuous execution, we don't need an end_date
+    // Use duration_hours or calculate from issues
+    const sprintDuration = duration_hours || 8; // Default 8 hours if not specified
+    const calculatedEndDate = end_date || new Date(new Date(start_date).getTime() + sprintDuration * 60 * 60 * 1000).toISOString();
+    
     // Create sprint
     const result = await pool.query(
-      `INSERT INTO sprints (name, project_id, start_date, end_date, status, planned_story_points) 
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [name, project_id, start_date, end_date, 'planned', plannedPoints]
+      `INSERT INTO sprints (name, project_id, start_date, end_date, status, planned_story_points, duration_hours) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [name, project_id, start_date, calculatedEndDate, 'planned', plannedPoints, sprintDuration]
     );
     
     // Assign issues to sprint
@@ -597,6 +664,157 @@ app.get('/api/sprints/:id/burndown', async (req, res) => {
       [req.params.id]
     );
     res.json(result.rows[0].burndown || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ CONTINUOUS SPRINT EXECUTION API ============
+// Initialize continuous sprint execution
+app.post('/api/continuous/sprint/:sprintId/start', async (req, res) => {
+  try {
+    const { sprintId } = req.params;
+    
+    // Fetch all tasks in the sprint
+    const tasksResult = await pool.query(`
+      SELECT i.* 
+      FROM issues i
+      WHERE i.sprint_id = $1
+      ORDER BY i.priority DESC, i.created_at
+    `, [sprintId]);
+
+    const tasks = tasksResult.rows;
+    
+    // Get sprint details
+    const sprintResult = await pool.query(
+      'SELECT * FROM sprints WHERE id = $1',
+      [sprintId]
+    );
+    const sprint = sprintResult.rows[0];
+
+    // Generate continuation instructions
+    const taskList = tasks.map((t, idx) => 
+      `${idx + 1}. [${t.status}] ${t.title} (ID: ${t.id})`
+    ).join('\n');
+
+    const instructions = `
+=== CONTINUOUS SPRINT EXECUTION ACTIVATED ===
+
+Sprint: ${sprint.name}
+Total Tasks: ${tasks.length}
+
+CRITICAL INSTRUCTIONS:
+1. Complete ALL tasks without stopping
+2. After each task, IMMEDIATELY continue to the next
+3. Mark each completed: POST /api/continuous/sprint/${sprintId}/task/{taskId}/complete
+4. Continue until ALL ${tasks.length} tasks are done
+
+TASKS TO COMPLETE:
+${taskList}
+
+Start with task #1 now and DON'T STOP!
+`;
+
+    // Store session in Redis
+    await redis.set(`continuous:${sprintId}`, JSON.stringify({
+      sprintId,
+      tasks: tasks.map(t => t.id),
+      completed: [],
+      current: tasks[0]?.id,
+      startedAt: new Date()
+    }));
+
+    res.json({
+      success: true,
+      instructions,
+      taskCount: tasks.length
+    });
+  } catch (error) {
+    console.error('Failed to start continuous execution:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mark task complete and get next
+app.post('/api/continuous/sprint/:sprintId/task/:taskId/complete', async (req, res) => {
+  try {
+    const { sprintId, taskId } = req.params;
+    
+    // Get session from Redis
+    const sessionData = await redis.get(`continuous:${sprintId}`);
+    if (!sessionData) {
+      return res.status(404).json({ error: 'No active continuous session' });
+    }
+    
+    const session = JSON.parse(sessionData);
+    
+    // Mark task complete
+    await pool.query(
+      "UPDATE issues SET status = 'done', completed_at = NOW() WHERE id = $1",
+      [taskId]
+    );
+    
+    // Update session
+    session.completed.push(taskId);
+    const currentIndex = session.tasks.indexOf(taskId);
+    const nextTaskId = session.tasks[currentIndex + 1];
+    
+    if (nextTaskId) {
+      session.current = nextTaskId;
+      await redis.set(`continuous:${sprintId}`, JSON.stringify(session));
+      
+      // Get next task details
+      const nextTask = await pool.query('SELECT * FROM issues WHERE id = $1', [nextTaskId]);
+      
+      res.json({
+        success: true,
+        nextInstructions: `
+✅ Task completed: ${session.completed.length}/${session.tasks.length}
+
+NEXT TASK: ${nextTask.rows[0].title}
+ID: ${nextTaskId}
+
+CONTINUE IMMEDIATELY - Do not stop!
+`,
+        continueExecution: true
+      });
+    } else {
+      // Sprint complete!
+      res.json({
+        success: true,
+        nextInstructions: `
+🎉 SPRINT COMPLETED! 
+All ${session.tasks.length} tasks done!
+`,
+        continueExecution: false
+      });
+    }
+  } catch (error) {
+    console.error('Failed to mark task complete:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get continuous session status
+app.get('/api/continuous/sprint/:sprintId/status', async (req, res) => {
+  try {
+    const sessionData = await redis.get(`continuous:${req.params.sprintId}`);
+    if (!sessionData) {
+      return res.status(404).json({ error: 'No active session' });
+    }
+    
+    const session = JSON.parse(sessionData);
+    res.json({
+      success: true,
+      status: {
+        ...session,
+        progress: {
+          completed: session.completed.length,
+          total: session.tasks.length,
+          percentage: Math.round((session.completed.length / session.tasks.length) * 100)
+        }
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1340,6 +1558,9 @@ app.delete('/api/projects/:id/integrations/:provider', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Documentation routes
+app.use('/api/docs', docsRouter);
 
 // Start server
 async function startServer() {

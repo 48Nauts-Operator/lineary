@@ -298,7 +298,7 @@ class LinearyMCPServer {
       }
 
       const projectList = projects.map(p => 
-        `• ${p.name} (ID: ${p.id.slice(0, 8)}...)\n  ${p.description || 'No description'}\n  Color: ${p.color}`
+        `• ${p.name}\n  ID: ${p.id}\n  ${p.description || 'No description'}\n  Color: ${p.color}`
       ).join('\n\n');
 
       return {
@@ -352,7 +352,7 @@ class LinearyMCPServer {
       };
 
       const issueList = issues.map(i => 
-        `${statusEmojis[i.status] || '❓'} **${i.title}**\n  ID: ${i.id.slice(0, 8)}...\n  Status: ${i.status} | Priority: ${i.priority} | Points: ${i.story_points || '-'}`
+        `${statusEmojis[i.status] || '❓'} **${i.title}**\n  ID: ${i.id}\n  Status: ${i.status} | Priority: ${i.priority} | Points: ${i.story_points || '-'}`
       ).join('\n\n');
 
       return {

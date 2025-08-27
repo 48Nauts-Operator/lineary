@@ -13,15 +13,18 @@ import { getMarkdownPreview } from '../utils/markdown'
 interface Props {
   selectedProject: Project | null
   projects: Project[]
+  statusFilter?: string
+  filteredIssues?: Issue[]
 }
 
-const IssuesPage: React.FC<Props> = ({ selectedProject, projects }) => {
+const IssuesPage: React.FC<Props> = ({ selectedProject, projects, statusFilter, filteredIssues }) => {
   const [issues, setIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(true)
   const [showNewIssueForm, setShowNewIssueForm] = useState(false)
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [showAllProjects, setShowAllProjects] = useState(false)
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
 
   useEffect(() => {
     fetchIssues()
@@ -48,29 +51,34 @@ const IssuesPage: React.FC<Props> = ({ selectedProject, projects }) => {
   }
 
   const getStatusIcon = (status: string) => {
+    // More meaningful status-based icons
     const icons: Record<string, string> = {
-      backlog: '⚪',
-      todo: '🔵',
-      in_progress: '🟡',
-      in_review: '🟣',
-      done: '🟢',
-      cancelled: '🔴'
+      backlog: '📋',      // Clipboard for backlog items
+      todo: '⭕',         // Circle/ready to start
+      in_progress: '🔄',  // In progress/working
+      in_review: '👁️',    // Review/checking
+      done: '✅',         // Checkmark for done
+      cancelled: '⛔',    // Stop/cancelled
+      blocked: '🚧',      // Roadblock/blocked
+      testing: '🧪'       // Testing
     }
-    return icons[status] || '⚪'
+    return icons[status] || '📋'
   }
 
   const getPriorityIcon = (priority: number) => {
+    // Cleaner priority indicators
     const icons = {
-      1: '🔺',
-      2: '🔸',
-      3: '➖',
-      4: '🔻',
-      5: '⏸️'
+      1: '🔴',  // Urgent/Critical (red)
+      2: '🟠',  // High (orange)
+      3: '🟡',  // Medium (yellow)
+      4: '🟢',  // Low (green)
+      5: '⚪'   // None/Minimal (white)
     }
-    return icons[priority as keyof typeof icons] || '➖'
+    return icons[priority as keyof typeof icons] || '⚪'
   }
 
-  const filteredIssues = issues.filter(issue => {
+  // Use passed filteredIssues if available, otherwise filter locally
+  const displayIssues = filteredIssues || issues.filter(issue => {
     if (filterStatus === 'active') {
       return !['done', 'cancelled'].includes(issue.status)
     } else if (filterStatus === 'completed') {
@@ -79,7 +87,7 @@ const IssuesPage: React.FC<Props> = ({ selectedProject, projects }) => {
     return true
   })
 
-  const groupedIssues = filteredIssues.reduce((acc, issue) => {
+  const groupedIssues = displayIssues.reduce((acc, issue) => {
     const status = issue.status
     if (!acc[status]) {
       acc[status] = []
@@ -111,42 +119,60 @@ const IssuesPage: React.FC<Props> = ({ selectedProject, projects }) => {
             Issues - {selectedProject ? selectedProject.name : 'All Projects'}
           </h2>
           
-          {/* Filter Tabs */}
-          <div className="flex items-center space-x-1">
+          {/* Filter Dropdown */}
+          <div className="relative">
             <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-3 py-1 text-sm rounded transition-colors ${
-                filterStatus === 'all'
-                  ? 'bg-purple-600/20 text-purple-400'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className="flex items-center space-x-2 px-3 py-1 text-sm rounded hover:bg-gray-800 transition-colors"
             >
-              All
+              <span className={filterStatus === 'all' ? 'text-gray-400' : 'text-purple-400'}>
+                {filterStatus === 'all' ? 'All Issues' : 
+                 filterStatus === 'active' ? 'Active' :
+                 filterStatus === 'completed' ? 'Done' :
+                 filterStatus === 'backlog' ? 'Backlog' :
+                 filterStatus === 'sprint' ? 'Sprint' :
+                 filterStatus === 'processing' ? 'Processing' :
+                 filterStatus === 'testing' ? 'Testing' : filterStatus}
+              </span>
+              <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-            <button
-              onClick={() => setFilterStatus('active')}
-              className={`px-3 py-1 text-sm rounded transition-colors ${
-                filterStatus === 'active'
-                  ? 'bg-purple-600/20 text-purple-400'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setFilterStatus('completed')}
-              className={`px-3 py-1 text-sm rounded transition-colors ${
-                filterStatus === 'completed'
-                  ? 'bg-purple-600/20 text-purple-400'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              Completed
-            </button>
+            
+            {showFilterDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-40 bg-gray-900 border border-gray-700 rounded-lg shadow-lg py-1 z-50">
+                {[
+                  { value: 'all', label: 'All Issues' },
+                  { value: 'backlog', label: 'Backlog' },
+                  { value: 'sprint', label: 'Sprint' },
+                  { value: 'active', label: 'In Progress' },
+                  { value: 'testing', label: 'Testing' },
+                  { value: 'completed', label: 'Done' }
+                ].map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setFilterStatus(option.value)
+                      setShowFilterDropdown(false)
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between ${
+                      filterStatus === option.value ? 'text-purple-400' : 'text-gray-300'
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    {filterStatus === option.value && (
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           <span className="text-sm text-gray-500">
-            {filteredIssues.length} issues
+            {displayIssues.length} issues
           </span>
         </div>
         
@@ -160,7 +186,7 @@ const IssuesPage: React.FC<Props> = ({ selectedProject, projects }) => {
 
       {/* Issues List - Linear Style */}
       <div className="flex-1 overflow-y-auto">
-        {filteredIssues.length > 0 ? (
+        {displayIssues.length > 0 ? (
           <div className="space-y-1">
             {orderedStatuses.map(status => (
               <div key={status}>

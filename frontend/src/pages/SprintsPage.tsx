@@ -7,6 +7,8 @@ import toast from 'react-hot-toast'
 import { format, differenceInDays } from 'date-fns'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { Project, Issue, Sprint, API_URL } from '../App'
+import ContinuousSprintRunner from '../components/ContinuousSprintRunner'
+import SprintCreator from '../components/SprintCreator'
 
 interface Props {
   selectedProject: Project | null
@@ -20,6 +22,8 @@ const SprintsPage: React.FC<Props> = ({ selectedProject, projects }) => {
   const [showNewSprintForm, setShowNewSprintForm] = useState(false)
   const [selectedSprint, setSelectedSprint] = useState<Sprint | null>(null)
   const [showSprintPlanning, setShowSprintPlanning] = useState(false)
+  const [showContinuousRunner, setShowContinuousRunner] = useState(false)
+  const [continuousSprint, setContinuousSprint] = useState<Sprint | null>(null)
   const [burndownData, setBurndownData] = useState<any[]>([])
   const [newSprint, setNewSprint] = useState({
     name: '',
@@ -45,6 +49,7 @@ const SprintsPage: React.FC<Props> = ({ selectedProject, projects }) => {
       const response = await axios.get(`${API_URL}/sprints`)
       let sprintsData = response.data || []
       
+      // Only filter if we have a selected project, otherwise show all sprints
       if (selectedProject) {
         sprintsData = sprintsData.filter((sprint: Sprint) => sprint.project_id === selectedProject.id)
       }
@@ -174,8 +179,7 @@ const SprintsPage: React.FC<Props> = ({ selectedProject, projects }) => {
           </button>
           <button 
             onClick={() => setShowNewSprintForm(true)}
-            disabled={!selectedProject}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-600 px-6 py-3 rounded-lg text-white font-medium transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-3 rounded-lg text-white font-medium transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
           >
             + New Sprint
           </button>
@@ -184,82 +188,14 @@ const SprintsPage: React.FC<Props> = ({ selectedProject, projects }) => {
 
       {/* New Sprint Form */}
       {showNewSprintForm && (
-        <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-purple-500/30 shadow-2xl">
-          <h3 className="text-xl font-semibold mb-6 text-white">Create New Sprint</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Sprint Name *
-              </label>
-              <input
-                type="text"
-                value={newSprint.name}
-                onChange={(e) => setNewSprint({ ...newSprint, name: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:border-purple-500 text-white"
-                placeholder="Sprint 1, Feature Sprint, etc."
-                autoFocus
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Project
-              </label>
-              <select
-                value={newSprint.project_id}
-                onChange={(e) => setNewSprint({ ...newSprint, project_id: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:border-purple-500 text-white"
-                required
-              >
-                <option value="">Select Project</option>
-                {projects.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Start Date *
-              </label>
-              <input
-                type="date"
-                value={newSprint.start_date}
-                onChange={(e) => setNewSprint({ ...newSprint, start_date: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:border-purple-500 text-white"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                End Date *
-              </label>
-              <input
-                type="date"
-                value={newSprint.end_date}
-                onChange={(e) => setNewSprint({ ...newSprint, end_date: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:border-purple-500 text-white"
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-3 pt-6">
-            <button
-              onClick={() => setShowNewSprintForm(false)}
-              className="px-6 py-2 text-gray-400 hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={createSprint}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-2 rounded-lg text-white font-medium transition-all duration-200"
-            >
-              Create Sprint
-            </button>
-          </div>
-        </div>
+        <SprintCreator 
+          projects={projects}
+          onSprintCreated={() => {
+            setShowNewSprintForm(false);
+            fetchSprints(); // Refresh sprints list
+          }}
+          onClose={() => setShowNewSprintForm(false)}
+        />
       )}
 
       {/* Sprint Planning Modal */}
@@ -329,6 +265,25 @@ const SprintsPage: React.FC<Props> = ({ selectedProject, projects }) => {
                     <p className="text-sm font-medium text-white">{duration}</p>
                     <p className="text-xs text-gray-400">Days</p>
                   </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => {
+                      setContinuousSprint(sprint)
+                      setShowContinuousRunner(true)
+                    }}
+                    className="flex-1 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 px-3 py-2 rounded-lg text-white text-sm font-medium transition-all flex items-center justify-center gap-2"
+                  >
+                    ⚡ Run Continuously
+                  </button>
+                  <button
+                    onClick={() => setSelectedSprint(sprint)}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-white text-sm font-medium transition-all"
+                  >
+                    📊 View Details
+                  </button>
                 </div>
               </div>
             </div>
@@ -435,6 +390,21 @@ const SprintsPage: React.FC<Props> = ({ selectedProject, projects }) => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Continuous Sprint Runner Modal */}
+      {showContinuousRunner && continuousSprint && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="max-w-4xl w-full">
+            <ContinuousSprintRunner 
+              sprint={continuousSprint}
+              onClose={() => {
+                setShowContinuousRunner(false)
+                setContinuousSprint(null)
+              }}
+            />
           </div>
         </div>
       )}

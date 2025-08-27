@@ -5,11 +5,16 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import EnhancedIssueDetail from './components/EnhancedIssueDetail'
 import IssuesPage from './pages/IssuesPage'
+import SprintsPage from './pages/SprintsPage'
+import DocsPage from './pages/DocsPage'
 import IntegrationCards from './components/IntegrationCards'
+import AutopilotDashboard from './components/AutopilotDashboard'
 
-export const API_URL = 'https://ai-linear.blockonauts.io/api'
+export const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3399/api'
+  : 'https://ai-linear.blockonauts.io/api'
 
-interface Project {
+export interface Project {
   id: string
   name: string
   description: string
@@ -19,7 +24,7 @@ interface Project {
   created_at: string
 }
 
-interface Issue {
+export interface Issue {
   id: string
   project_id: string
   title: string
@@ -41,7 +46,7 @@ interface Issue {
   tags?: string[]
 }
 
-interface Sprint {
+export interface Sprint {
   id: string
   name: string
   project_id: string
@@ -54,7 +59,7 @@ interface Sprint {
   completed_story_points?: number
 }
 
-interface Activity {
+export interface Activity {
   id: string
   type: string
   description: string
@@ -65,7 +70,7 @@ interface Activity {
 const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [issues, setIssues] = useState<Issue[]>([])
-  const [activeTab, setActiveTab] = useState<'projects' | 'issues' | 'sprints' | 'analytics' | 'settings'>('projects')
+  const [activeTab, setActiveTab] = useState<'projects' | 'issues' | 'sprints' | 'docs' | 'analytics' | 'autopilot' | 'settings'>('projects')
   const [loading, setLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showNewProjectForm, setShowNewProjectForm] = useState(false)
@@ -193,7 +198,7 @@ const App: React.FC = () => {
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="container mx-auto px-4">
           <nav className="flex space-x-8">
-            {(['projects', 'issues', 'sprints', 'analytics', 'settings'] as const).map(tab => (
+            {(['projects', 'issues', 'sprints', 'docs', 'analytics', 'autopilot', 'settings'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -203,10 +208,6 @@ const App: React.FC = () => {
                     : 'border-transparent text-gray-400 hover:text-white'
                 }`}
               >
-                {tab === 'projects' && '📁 '}
-                {tab === 'issues' && '📋 '}
-                {tab === 'sprints' && '🏃 '}
-                {tab === 'analytics' && '📊 '}
                 {tab}
               </button>
             ))}
@@ -329,14 +330,18 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'issues' && (
-          <IssuesPage selectedProject={selectedProject} projects={projects} />
+          <IssuesPage 
+            selectedProject={selectedProject} 
+            projects={projects}
+          />
         )}
 
         {activeTab === 'sprints' && (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-xl font-semibold mb-4">Sprint Planning</h2>
-            <p className="text-gray-400">Sprint management coming soon...</p>
-          </div>
+          <SprintsPage selectedProject={selectedProject} projects={projects} />
+        )}
+
+        {activeTab === 'docs' && (
+          <DocsPage selectedProject={selectedProject} projects={projects} />
         )}
 
         {/* Settings Tab */}
@@ -421,6 +426,10 @@ const App: React.FC = () => {
             <p className="text-gray-400">Analytics and metrics coming soon...</p>
           </div>
         )}
+
+        {activeTab === 'autopilot' && (
+          <AutopilotDashboard />
+        )}
       </main>
       
       {/* Enhanced Issue Detail Modal */}
@@ -443,4 +452,3 @@ const App: React.FC = () => {
 }
 
 export default App
-export type { Project, Issue, Sprint, Activity }

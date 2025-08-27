@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lineary - The system for modern AI development</title>
+    <meta name="description" content="Streamline issues, sprints, and AI workflows. Purpose-built for teams shipping AI products at relentless pace.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .feature-card {
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+        }
+        
+        /* Subtle Neural Network Animation Styles */
+        .neural-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%);
+        }
+        
+        .grid-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: drift 20s linear infinite;
+        }
+        
+        @keyframes drift {
+            from { transform: translate(0, 0); }
+            to { transform: translate(50px, 50px); }
+        }
+        
+        .neural-container {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 300px;
+        }
+        
+        .node {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        .node::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            bottom: -6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            50% { 
+                opacity: 0.5;
+                transform: scale(1.5);
+            }
+        }
+        
+        .connection {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.3) 50%, 
+                transparent);
+            transform-origin: left center;
+            opacity: 0;
+            animation: connectionPulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes connectionPulse {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.6; }
+        }
+        
+        .data-particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+        }
+        
+        @keyframes flow {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+        
+        .glow-orb {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, 
+                rgba(139, 92, 246, 0.3) 0%, 
+                rgba(139, 92, 246, 0.1) 40%, 
+                transparent 70%);
+            filter: blur(40px);
+            animation: float 10s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-black text-white overflow-x-hidden">
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-black/50 backdrop-blur-xl z-50 border-b border-gray-800/30">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-8">
+                    <h1 class="text-2xl font-bold">Lineary</h1>
+                    <div class="hidden md:flex items-center space-x-6 text-sm">
+                        <a href="#features" class="text-gray-400 hover:text-white transition">Features</a>
+                        <a href="#workflow" class="text-gray-400 hover:text-white transition">Workflow</a>
+                        <a href="#ai" class="text-gray-400 hover:text-white transition">AI</a>
+                        <a href="#pricing" class="text-gray-400 hover:text-white transition">Pricing</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="http://localhost:3399" class="text-sm text-gray-400 hover:text-white transition">
+                        Sign in
+                    </a>
+                    <a href="http://localhost:3399" class="bg-white text-black px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
+                        Start building
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Large Hero Section with Subtle Neural Design -->
+    <section class="relative min-h-[90vh] flex items-center">
+        <div class="neural-bg">
+            <!-- Grid pattern background -->
+            <div class="grid-pattern"></div>
+            
+            <!-- Subtle neural network -->
+            <div class="neural-container" id="neural-network"></div>
+            
+            <!-- Floating glow orbs -->
+            <div class="glow-orb" style="top: 20%; left: 10%; animation-delay: 0s;"></div>
+            <div class="glow-orb" style="top: 60%; right: 10%; animation-delay: 3s;"></div>
+        </div>
+        
+        <div class="hero-content max-w-5xl mx-auto text-center px-6 pt-32 pb-20">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm mb-8 backdrop-blur-sm">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                <span class="text-gray-300">AI Autopilot Active</span>
+            </div>
+            
+            <h1 class="text-7xl md:text-8xl font-bold mb-8 tracking-tight">
+                The system for<br/>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-white">
+                    modern AI
+                </span><br/>
+                <span class="gradient-text">development</span>
+            </h1>
+            
+            <p class="text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed">
+                Streamline issues, sprints, and AI workflows.<br/>
+                Purpose-built for teams shipping AI products at relentless pace.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-20">
+                <a href="http://localhost:3399" class="bg-white text-black px-8 py-4 rounded-xl font-medium hover:bg-gray-200 transition text-lg group">
+                    Start building 
+                    <span class="inline-block transition-transform group-hover:translate-x-1">→</span>
+                </a>
+                <a href="#ai" class="text-gray-400 hover:text-white transition flex items-center space-x-2 px-6 py-3">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>See AI in action</span>
+                </a>
+            </div>
+
+            <!-- Social Proof -->
+            <div class="flex items-center justify-center space-x-8 text-sm text-gray-500">
+                <div class="flex -space-x-2">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 border-2 border-black"></div>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 border-2 border-black"></div>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border-2 border-black"></div>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 border-2 border-black"></div>
+                </div>
+                <span>Powering the world's best AI product teams</span>
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Key Features Grid -->
+    <section id="features" class="py-20 px-6 bg-gradient-to-b from-black to-gray-950">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Built for velocity</h2>
+                <p class="text-gray-400 text-lg">Everything you need to ship AI products faster</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- AI Autopilot -->
+                <div class="feature-card bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10">
+                    <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-2xl">🤖</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">AI Autopilot</h3>
+                    <p class="text-gray-400">Continuous sprint execution with AI agents working 24/7 on your backlog</p>
+                </div>
+
+                <!-- Smart Estimation -->
+                <div class="feature-card bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10">
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-2xl">⚡</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Token Cost Estimation</h3>
+                    <p class="text-gray-400">Real-time LLM token usage predictions based on issue complexity</p>
+                </div>
+
+                <!-- Sprint Management -->
+                <div class="feature-card bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10">
+                    <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-2xl">📊</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Smart Sprints</h3>
+                    <p class="text-gray-400">Automated sprint planning with AI-powered priority optimization</p>
+                </div>
+
+                <!-- Issue Tracking -->
+                <div class="feature-card bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10">
+                    <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-2xl">🎯</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Linear-Style Issues</h3>
+                    <p class="text-gray-400">Beautiful, fast issue tracking with keyboard shortcuts and filters</p>
+                </div>
+
+                <!-- Integrations -->
+                <div class="feature-card bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10">
+                    <div class="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-2xl">🔗</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">AI Tool Integration</h3>
+                    <p class="text-gray-400">Connect Claude, GPT-4, and custom AI agents to your workflow</p>
+                </div>
+
+                <!-- Analytics -->
+                <div class="feature-card bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10">
+                    <div class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-2xl">📈</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Velocity Insights</h3>
+                    <p class="text-gray-400">Track team performance and AI agent efficiency in real-time</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Workflow Section -->
+    <section id="workflow" class="py-20 px-6 bg-black">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Designed for the way you work</h2>
+                <p class="text-gray-400 text-lg">From idea to deployment in record time</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <div class="space-y-8">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white font-bold">1</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold mb-1">Create issues instantly</h3>
+                                <p class="text-gray-400 text-sm">Natural language to structured tickets with AI assistance</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white font-bold">2</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold mb-1">AI plans your sprint</h3>
+                                <p class="text-gray-400 text-sm">Automatic prioritization based on dependencies and team velocity</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white font-bold">3</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold mb-1">Execute with Autopilot</h3>
+                                <p class="text-gray-400 text-sm">AI agents work on tasks while you focus on strategy</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white font-bold">4</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold mb-1">Ship continuously</h3>
+                                <p class="text-gray-400 text-sm">Review, merge, and deploy with confidence</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 rounded-2xl p-8 border border-white/10">
+                    <div class="aspect-video bg-black/50 rounded-xl flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="font-mono text-sm text-gray-400 text-left">
+                                <p class="text-green-400">$ lineary autopilot start</p>
+                                <p class="mt-2">🤖 Analyzing backlog...</p>
+                                <p>📊 Found 24 issues to process</p>
+                                <p>⚡ Estimated tokens: 45,230</p>
+                                <p class="mt-2">🔄 Starting continuous execution...</p>
+                                <p class="text-purple-400">→ Working on: Update user auth flow</p>
+                                <p class="text-gray-600">→ Queued: Fix responsive navbar</p>
+                                <p class="text-gray-600">→ Queued: Add dark mode toggle</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Section -->
+    <section id="ai" class="py-20 px-6 bg-gradient-to-b from-black via-purple-950/10 to-black">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-sm mb-4">
+                    <span class="text-purple-400">NEW</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4">Meet your AI development partner</h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Lineary AI works alongside your team, turning backlogs into shipped features
+                </p>
+            </div>
+
+            <div class="bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-3xl p-12 border border-purple-500/20">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-6">Continuous execution, zero friction</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start space-x-3">
+                                <svg class="w-6 h-6 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">AI agents work 24/7 on your backlog</span>
+                            </li>
+                            <li class="flex items-start space-x-3">
+                                <svg class="w-6 h-6 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Smart task breakdown and estimation</span>
+                            </li>
+                            <li class="flex items-start space-x-3">
+                                <svg class="w-6 h-6 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Automatic code reviews and testing</span>
+                            </li>
+                            <li class="flex items-start space-x-3">
+                                <svg class="w-6 h-6 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Human-in-the-loop for critical decisions</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-black/50 rounded-2xl p-8 border border-white/10">
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                <span class="text-sm text-gray-400">AI Agent Active</span>
+                            </div>
+                            <div class="font-mono text-sm text-gray-300">
+                                <p>🤖 Analyzing issue #42...</p>
+                                <p class="text-gray-500">Estimated tokens: 2,450</p>
+                                <p class="text-gray-500">Complexity: Medium</p>
+                                <p class="mt-2">✅ Generated solution</p>
+                                <p>🔄 Running tests...</p>
+                                <p class="text-green-400">✓ All tests passing</p>
+                                <p class="mt-2">📝 Creating PR...</p>
+                                <p class="text-purple-400">→ Ready for review</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-20 px-6 bg-black">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Simple, transparent pricing</h2>
+                <p class="text-gray-400 text-lg">Start free, scale as you grow</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Free Tier -->
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-8">
+                    <h3 class="text-xl font-bold mb-2">Free</h3>
+                    <p class="text-gray-400 text-sm mb-6">For individuals and small teams</p>
+                    <div class="text-4xl font-bold mb-6">$0<span class="text-lg font-normal text-gray-400">/month</span></div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Up to 3 projects</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">10 users</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Basic AI features</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Community support</span>
+                        </li>
+                    </ul>
+                    <a href="http://localhost:3399" class="w-full block text-center bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition">
+                        Start free
+                    </a>
+                </div>
+
+                <!-- Pro Tier -->
+                <div class="bg-gradient-to-b from-purple-900/30 to-blue-900/30 border-2 border-purple-500/50 rounded-2xl p-8 relative">
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                            POPULAR
+                        </span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Pro</h3>
+                    <p class="text-gray-400 text-sm mb-6">For growing teams</p>
+                    <div class="text-4xl font-bold mb-6">$29<span class="text-lg font-normal text-gray-400">/user/month</span></div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Unlimited projects</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Unlimited users</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm font-semibold text-purple-400">AI Autopilot included</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Advanced analytics</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Priority support</span>
+                        </li>
+                    </ul>
+                    <a href="http://localhost:3399" class="w-full block text-center bg-white text-black hover:bg-gray-200 px-4 py-2 rounded-lg transition font-medium">
+                        Start free trial
+                    </a>
+                </div>
+
+                <!-- Enterprise Tier -->
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-8">
+                    <h3 class="text-xl font-bold mb-2">Enterprise</h3>
+                    <p class="text-gray-400 text-sm mb-6">For large organizations</p>
+                    <div class="text-4xl font-bold mb-6">Custom</div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Everything in Pro</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">SSO & SAML</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Custom AI agents</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">On-premise option</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm">Dedicated support</span>
+                        </li>
+                    </ul>
+                    <a href="mailto:sales@lineary.app" class="w-full block text-center bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition">
+                        Contact sales
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-5xl font-bold mb-6">
+                Ship faster with AI
+            </h2>
+            <p class="text-xl text-gray-400 mb-8">
+                Join teams already building the future with Lineary
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <a href="http://localhost:3399" class="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-gray-200 transition text-lg">
+                    Start building for free →
+                </a>
+                <a href="#pricing" class="text-gray-400 hover:text-white transition">
+                    View pricing
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-6 mb-4 md:mb-0">
+                    <h3 class="text-lg font-bold">Lineary</h3>
+                    <span class="text-sm text-gray-500">© 2025</span>
+                </div>
+                <div class="flex items-center space-x-6 text-sm text-gray-400">
+                    <a href="#" class="hover:text-white transition">Documentation</a>
+                    <a href="#" class="hover:text-white transition">API</a>
+                    <a href="#" class="hover:text-white transition">Status</a>
+                    <a href="#" class="hover:text-white transition">Terms</a>
+                    <a href="#" class="hover:text-white transition">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Subtle Neural Network Animation -->
+    <script>
+        // Create subtle neural network
+        const container = document.getElementById('neural-network');
+        const numNodes = 15;
+        const nodes = [];
+        
+        // Create nodes
+        for (let i = 0; i < numNodes; i++) {
+            const node = document.createElement('div');
+            node.className = 'node';
+            
+            // Position nodes in a subtle pattern
+            const x = Math.random() * 800;
+            const y = Math.random() * 300;
+            
+            node.style.left = `${x}px`;
+            node.style.top = `${y}px`;
+            node.style.animationDelay = `${Math.random() * 4}s`;
+            
+            container.appendChild(node);
+            nodes.push({ element: node, x, y });
+        }
+        
+        // Create connections between nearby nodes
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const distance = Math.sqrt(
+                    Math.pow(nodes[i].x - nodes[j].x, 2) +
+                    Math.pow(nodes[i].y - nodes[j].y, 2)
+                );
+                
+                if (distance < 150 && Math.random() > 0.6) {
+                    const connection = document.createElement('div');
+                    connection.className = 'connection';
+                    
+                    const angle = Math.atan2(nodes[j].y - nodes[i].y, nodes[j].x - nodes[i].x);
+                    
+                    connection.style.width = `${distance}px`;
+                    connection.style.left = `${nodes[i].x}px`;
+                    connection.style.top = `${nodes[i].y}px`;
+                    connection.style.transform = `rotate(${angle}rad)`;
+                    connection.style.animationDelay = `${Math.random() * 4}s`;
+                    
+                    container.appendChild(connection);
+                }
+            }
+        }
+        
+        // Animate data particles along connections
+        setInterval(() => {
+            if (Math.random() > 0.7) {
+                const particle = document.createElement('div');
+                particle.className = 'data-particle';
+                
+                // Pick a random node to start from
+                const startNode = nodes[Math.floor(Math.random() * nodes.length)];
+                particle.style.left = `${startNode.x}px`;
+                particle.style.top = `${startNode.y}px`;
+                particle.style.animation = 'flow 3s ease-out';
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 3000);
+            }
+        }, 500);
+    </script>
+</body>
+</html>
