@@ -918,7 +918,17 @@ app.use('/api', oauthRoutes(pool));
 
 // Mount webhook routes
 const webhookRoutes = require('./routes/webhooks');
+const githubAppRoutes = require('./routes/github-app');
+const aiFeedbackRoutes = require('./routes/ai-feedback');
 app.use('/api', webhookRoutes(pool));
+
+// Add database to request for GitHub App and AI feedback routes
+app.use((req, res, next) => {
+  req.db = pool;
+  next();
+});
+app.use('/api', githubAppRoutes);
+app.use('/api', aiFeedbackRoutes);
 
 // ============ TAGS API ============
 app.get('/api/tags', async (req, res) => {
