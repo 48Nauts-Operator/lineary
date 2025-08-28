@@ -850,6 +850,21 @@ app.get('/api/continuous/sprint/:sprintId/status', async (req, res) => {
 const analyticsRoutes = require('./routes/analytics');
 app.use('/api', analyticsRoutes(pool));
 
+// ============ ATTACHMENTS API ============
+// Mount file attachment routes
+const attachmentsRoutes = require('./routes/attachments');
+app.use('/api', attachmentsRoutes(pool));
+
+// ============ VERSIONING API ============
+// Mount auto-versioning routes
+const versioningRoutes = require('./routes/versioning');
+app.use('/api', versioningRoutes(pool));
+
+// ============ BUG REPORTING API ============
+// Mount bug reporting routes
+const bugsRoutes = require('./routes/bugs');
+app.use('/api', bugsRoutes(pool));
+
 // ============ AI PROMPT TEMPLATES ============
 app.get('/api/prompts/templates', async (req, res) => {
   try {
