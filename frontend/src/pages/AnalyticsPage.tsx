@@ -368,11 +368,8 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
               <div className="text-right">
                 <p className="text-2xl font-bold text-white">
                   {metric.format === 'currency' ? 
-                    `$${(metric.value || 0).toFixed(2)}` :
-                    (typeof metric.value === 'number' ? 
-                      (metric.value > 1000 ? `${(metric.value / 1000).toFixed(1)}k` : metric.value.toFixed(1))
-                      : metric.value
-                    )
+                    `$${Number(metric.value || 0).toFixed(2)}` :
+                    (metric.value > 1000 ? `${(Number(metric.value) / 1000).toFixed(1)}k` : Number(metric.value || 0).toFixed(1))
                   }
                 </p>
                 <p className="text-gray-400 text-sm">{metric.unit}</p>
@@ -390,7 +387,7 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
             <p className="text-purple-400 font-medium mb-2">AI Development Assistant Impact</p>
             <div className="flex items-baseline space-x-2">
               <span className="text-5xl font-bold text-white">
-                {(analytics.timeTracking?.aiSaved?.total_hours_saved || 0).toFixed(1)}
+                {Number(analytics.timeTracking?.aiSaved?.total_hours_saved || 0).toFixed(1)}
               </span>
               <span className="text-2xl text-purple-400">hours saved</span>
             </div>
@@ -515,7 +512,7 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
           <div className="text-3xl mb-2">⚡</div>
           <p className="text-2xl font-bold text-white">
             {analytics.project?.avg_cycle_time_hours ? 
-              (parseFloat(analytics.project.avg_cycle_time_hours) / 24).toFixed(1)
+              (Number(analytics.project.avg_cycle_time_hours) / 24).toFixed(1)
               : '0'
             }
           </p>
@@ -526,7 +523,7 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
           <div className="text-3xl mb-2">💰</div>
           <p className="text-2xl font-bold text-white">
             ${analytics.tokenUsage?.summary?.total_cost ? 
-              parseFloat(analytics.tokenUsage.summary.total_cost.toString()).toFixed(2)
+              Number(analytics.tokenUsage.summary.total_cost).toFixed(2)
               : '0.00'
             }
           </p>
