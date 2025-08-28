@@ -199,25 +199,27 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
 
   const metrics = [
     { 
-      key: 'velocity', 
-      label: 'Velocity', 
-      icon: '📈', 
-      value: analytics.velocity.length > 0 ? analytics.velocity[analytics.velocity.length - 1]?.completed : 0,
-      unit: 'pts'
-    },
-    { 
-      key: 'cycle', 
-      label: 'Avg Cycle Time', 
-      icon: '⏱️', 
-      value: analytics.cycleTime.length > 0 ? analytics.cycleTime[analytics.cycleTime.length - 1]?.avgCycleTime : 0,
-      unit: 'days'
+      key: 'ai-saved', 
+      label: 'AI Time Saved', 
+      icon: '⚡', 
+      value: analytics.timeTracking?.aiSaved?.total_hours_saved || 0,
+      unit: 'hours',
+      highlight: true
     },
     { 
       key: 'tokens', 
       label: 'Token Usage', 
       icon: '🤖', 
-      value: analytics.tokenUsage.reduce((sum, item) => sum + (item.tokens || 0), 0),
+      value: analytics.tokenUsage?.summary?.total_tokens || 0,
       unit: 'tokens'
+    },
+    { 
+      key: 'cost', 
+      label: 'Total Cost', 
+      icon: '💰', 
+      value: analytics.tokenUsage?.summary?.total_cost || 0,
+      unit: '$',
+      format: 'currency'
     }
   ]
 
@@ -230,9 +232,11 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
     
     // Create activity map from data
     const activityMap = new Map()
-    analytics.activity?.heatmap?.forEach(item => {
-      activityMap.set(item.date, item.count)
-    })
+    if (Array.isArray(analytics.activity?.heatmap)) {
+      analytics.activity.heatmap.forEach(item => {
+        activityMap.set(item.date, item.count)
+      })
+    }
     
     // Generate grid cells for each day
     for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
@@ -274,12 +278,14 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
 
   const processDistributionData = () => {
     const statusCounts: { [key: string]: number } = {}
-    analytics.distribution?.forEach(item => {
-      if (!statusCounts[item.status]) {
-        statusCounts[item.status] = 0
-      }
-      statusCounts[item.status] += item.count
-    })
+    if (Array.isArray(analytics.distribution)) {
+      analytics.distribution.forEach(item => {
+        if (!statusCounts[item.status]) {
+          statusCounts[item.status] = 0
+        }
+        statusCounts[item.status] += item.count
+      })
+    }
     
     return Object.entries(statusCounts).map(([status, count]) => ({
       name: status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' '),
@@ -339,9 +345,12 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
               <div className="text-2xl">{metric.icon}</div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-white">
-                  {typeof metric.value === 'number' ? 
-                    (metric.value > 1000 ? `${(metric.value / 1000).toFixed(1)}k` : metric.value.toFixed(1))
-                    : metric.value
+                  {metric.format === 'currency' ? 
+                    `$${(metric.value || 0).toFixed(2)}` :
+                    (typeof metric.value === 'number' ? 
+                      (metric.value > 1000 ? `${(metric.value / 1000).toFixed(1)}k` : metric.value.toFixed(1))
+                      : metric.value
+                    )
                   }
                 </p>
                 <p className="text-gray-400 text-sm">{metric.unit}</p>
@@ -352,15 +361,59 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
         ))}
       </div>
 
+      {/* AI Time Saved Hero Banner */}
+      <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-xl rounded-xl p-8 border border-purple-500/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-purple-400 font-medium mb-2">AI Development Assistant Impact</p>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-5xl font-bold text-white">
+                {(analytics.timeTracking?.aiSaved?.total_hours_saved || 0).toFixed(1)}
+              </span>
+              <span className="text-2xl text-purple-400">hours saved</span>
+            </div>
+            <p className="text-gray-400 mt-2">
+              Across {analytics.timeTracking?.aiSaved?.ai_assisted_tasks || 0} AI-assisted tasks
+            </p>
+          </div>
+          <div className="text-6xl opacity-50">⚡</div>
+        </div>
+      </div>
+
+      {/* GitHub-Style Activity Heatmap */}
+      <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
+        <h3 className="text-lg font-semibold text-white mb-4">Activity Heatmap</h3>
+        <div className="overflow-x-auto">
+          <div className="grid grid-rows-7 grid-flow-col gap-1" style={{ gridAutoColumns: 'min-content' }}>
+            {generateHeatmapGrid()}
+          </div>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-xs text-gray-400">Less</p>
+          <div className="flex space-x-1">
+            {[0, 1, 2, 3, 4].map(level => (
+              <div
+                key={level}
+                className="w-3 h-3 rounded-sm"
+                style={{
+                  backgroundColor: getHeatmapColor(level)
+                }}
+              />
+            ))}
+          </div>
+          <p className="text-xs text-gray-400">More</p>
+        </div>
+      </div>
+
       {/* Main Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Velocity Chart */}
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
-          <h3 className="text-lg font-semibold text-white mb-4">Velocity Trend</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Weekly Velocity</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.velocity}>
+            <BarChart data={analytics.velocity || []}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="sprint" stroke="#9CA3AF" />
+              <XAxis dataKey="week" stroke="#9CA3AF" />
               <YAxis stroke="#9CA3AF" />
               <Tooltip 
                 contentStyle={{ 
@@ -369,50 +422,17 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
                   borderRadius: '8px'
                 }}
               />
-              <Bar dataKey="planned" fill="#6B7280" name="Planned" />
-              <Bar dataKey="completed" fill="#8B5CF6" name="Completed" />
+              <Bar dataKey="issues_completed" fill="#8B5CF6" name="Issues Completed" />
+              <Bar dataKey="story_points_completed" fill="#10B981" name="Story Points" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Cycle Time Chart */}
-        <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
-          <h3 className="text-lg font-semibold text-white mb-4">Cycle Time Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={analytics.cycleTime}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="date" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1F2937', 
-                  border: '1px solid #374151',
-                  borderRadius: '8px'
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="avgCycleTime" 
-                stroke="#10B981" 
-                strokeWidth={2}
-                name="Cycle Time (days)"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="avgLeadTime" 
-                stroke="#3B82F6" 
-                strokeWidth={2}
-                name="Lead Time (days)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Token Usage Chart */}
+        {/* Token Usage Over Time */}
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
           <h3 className="text-lg font-semibold text-white mb-4">AI Token Usage</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={analytics.tokenUsage}>
+            <AreaChart data={analytics.tokenUsage?.daily || []}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="date" stroke="#9CA3AF" />
               <YAxis stroke="#9CA3AF" />
@@ -425,7 +445,7 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
               />
               <Area
                 type="monotone"
-                dataKey="tokens"
+                dataKey="total_tokens"
                 stroke="#F59E0B"
                 fill="#F59E0B"
                 fillOpacity={0.3}
@@ -435,44 +455,24 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
           </ResponsiveContainer>
         </div>
 
-        {/* Status Distribution */}
+        {/* Issue Distribution */}
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
-          <h3 className="text-lg font-semibold text-white mb-4">Issue Status Distribution</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Issue Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={analytics.statusDistribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {analytics.statusDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1F2937', 
+            <BarChart data={processDistributionData()}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="name" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#1F2937',
                   border: '1px solid #374151',
                   borderRadius: '8px'
                 }}
               />
-            </PieChart>
+              <Bar dataKey="count" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {analytics.statusDistribution.map((item, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <div 
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-sm text-gray-300">{item.name}: {item.value}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
