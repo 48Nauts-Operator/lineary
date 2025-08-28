@@ -28,22 +28,49 @@ interface Props {
 }
 
 interface AnalyticsData {
+  project: any
+  activity: {
+    heatmap: any[]
+    summary: {
+      total_activities: number
+      active_days: number
+    }
+  }
+  tokenUsage: {
+    daily: any[]
+    summary: {
+      total_tokens: number
+      total_cost: number
+    }
+  }
+  timeTracking: {
+    daily: any[]
+    aiSaved: {
+      total_hours_saved: number
+      ai_assisted_tasks: number
+    }
+  }
   velocity: any[]
-  cycleTime: any[]
-  tokenUsage: any[]
-  burndown: any[]
-  statusDistribution: any[]
-  priorityDistribution: any[]
+  distribution: any[]
 }
 
 const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
   const [analytics, setAnalytics] = useState<AnalyticsData>({
+    project: {},
+    activity: {
+      heatmap: [],
+      summary: { total_activities: 0, active_days: 0 }
+    },
+    tokenUsage: {
+      daily: [],
+      summary: { total_tokens: 0, total_cost: 0 }
+    },
+    timeTracking: {
+      daily: [],
+      aiSaved: { total_hours_saved: 0, ai_assisted_tasks: 0 }
+    },
     velocity: [],
-    cycleTime: [],
-    tokenUsage: [],
-    burndown: [],
-    statusDistribution: [],
-    priorityDistribution: []
+    distribution: []
   })
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState('30') // days
@@ -54,36 +81,39 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
   }, [selectedProject, timeRange])
 
   const fetchAnalytics = async () => {
+    if (!selectedProject) {
+      toast.error('Please select a project to view analytics')
+      setLoading(false)
+      return
+    }
+    
     setLoading(true)
     try {
-      const projectFilter = selectedProject ? `?project_id=${selectedProject.id}` : ''
-      const timeFilter = projectFilter ? `&days=${timeRange}` : `?days=${timeRange}`
+      const response = await axios.get(
+        `${API_URL}/analytics/dashboard/${selectedProject.id}?days=${timeRange}`
+      )
       
-      const [velocityRes, cycleTimeRes, tokenUsageRes] = await Promise.all([
-        axios.get(`${API_URL}/analytics/velocity${projectFilter}${timeFilter}`),
-        axios.get(`${API_URL}/analytics/cycle-time${projectFilter}${timeFilter}`),
-        axios.get(`${API_URL}/analytics/token-usage${projectFilter}${timeFilter}`)
-      ])
-
-      setAnalytics({
-        velocity: velocityRes.data || [],
-        cycleTime: cycleTimeRes.data || [],
-        tokenUsage: tokenUsageRes.data || [],
-        burndown: [], // This would come from active sprints
-        statusDistribution: generateMockStatusData(),
-        priorityDistribution: generateMockPriorityData()
-      })
+      setAnalytics(response.data)
     } catch (error) {
       console.error('Error fetching analytics:', error)
       toast.error('Failed to load analytics data')
-      // Use mock data on error
+      // Use mock data on error for demo purposes
       setAnalytics({
+        project: { name: selectedProject.name, total_issues: 0, completed_issues: 0 },
+        activity: {
+          heatmap: generateMockHeatmapData(),
+          summary: { total_activities: 150, active_days: 25 }
+        },
+        tokenUsage: {
+          daily: generateMockTokenData(),
+          summary: { total_tokens: 50000, total_cost: 62.50 }
+        },
+        timeTracking: {
+          daily: [],
+          aiSaved: { total_hours_saved: 48.5, ai_assisted_tasks: 23 }
+        },
         velocity: generateMockVelocityData(),
-        cycleTime: generateMockCycleTimeData(),
-        tokenUsage: generateMockTokenData(),
-        burndown: generateMockBurndownData(),
-        statusDistribution: generateMockStatusData(),
-        priorityDistribution: generateMockPriorityData()
+        distribution: generateMockDistributionData()
       })
     } finally {
       setLoading(false)
@@ -121,6 +151,28 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
     { date: 'Day 7', remaining: 45, ideal: 40 },
     { date: 'Day 9', remaining: 28, ideal: 20 },
     { date: 'Day 10', remaining: 12, ideal: 0 }
+  ]
+
+  const generateMockHeatmapData = () => {
+    const data = []
+    const today = new Date()
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      data.push({
+        date: date.toISOString().split('T')[0],
+        activity_type: 'issue_created',
+        count: Math.floor(Math.random() * 10) + 1
+      })
+    }
+    return data
+  }
+
+  const generateMockDistributionData = () => [
+    { status: 'todo', priority: 'high', count: 5 },
+    { status: 'in_progress', priority: 'medium', count: 8 },
+    { status: 'done', priority: 'low', count: 12 },
+    { status: 'backlog', priority: 'medium', count: 15 }
   ]
 
   const generateMockStatusData = () => [
@@ -168,6 +220,72 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
       unit: 'tokens'
     }
   ]
+
+  // Helper functions for heatmap
+  const generateHeatmapGrid = () => {
+    const grid = []
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setDate(startDate.getDate() - 365)
+    
+    // Create activity map from data
+    const activityMap = new Map()
+    analytics.activity?.heatmap?.forEach(item => {
+      activityMap.set(item.date, item.count)
+    })
+    
+    // Generate grid cells for each day
+    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0]
+      const count = activityMap.get(dateStr) || 0
+      const level = getActivityLevel(count)
+      
+      grid.push(
+        <div
+          key={dateStr}
+          className="w-3 h-3 rounded-sm cursor-pointer hover:ring-2 hover:ring-purple-500"
+          style={{ backgroundColor: getHeatmapColor(level) }}
+          title={`${dateStr}: ${count} activities`}
+        />
+      )
+    }
+    
+    return grid
+  }
+
+  const getActivityLevel = (count: number) => {
+    if (count === 0) return 0
+    if (count <= 3) return 1
+    if (count <= 7) return 2
+    if (count <= 15) return 3
+    return 4
+  }
+
+  const getHeatmapColor = (level: number) => {
+    const colors = [
+      '#161B22', // No activity
+      '#0E4429', // Low
+      '#006D32', // Medium
+      '#26A641', // High
+      '#39D353'  // Very high
+    ]
+    return colors[level] || colors[0]
+  }
+
+  const processDistributionData = () => {
+    const statusCounts: { [key: string]: number } = {}
+    analytics.distribution?.forEach(item => {
+      if (!statusCounts[item.status]) {
+        statusCounts[item.status] = 0
+      }
+      statusCounts[item.status] += item.count
+    })
+    
+    return Object.entries(statusCounts).map(([status, count]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' '),
+      count
+    }))
+  }
 
   if (loading) {
     return (

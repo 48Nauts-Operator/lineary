@@ -385,6 +385,15 @@ app.post('/api/issues', async (req, res) => {
       [result.rows[0].id, 'created', `Issue created: ${title}`]
     );
     
+    // Record project activity for analytics
+    await pool.query(
+      `INSERT INTO project_activity (project_id, activity_date, activity_type, activity_count)
+       VALUES ($1, CURRENT_DATE, 'issue_created', 1)
+       ON CONFLICT (project_id, activity_date, activity_type)
+       DO UPDATE SET activity_count = project_activity.activity_count + 1`,
+      [project_id]
+    );
+    
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -423,6 +432,22 @@ app.patch('/api/issues/:id', async (req, res) => {
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Issue not found' });
+    }
+    
+    // Record activity if status changed to done
+    if (updates.status === 'done') {
+      await pool.query(
+        `UPDATE issues SET completed_at = CURRENT_TIMESTAMP WHERE id = $1 AND completed_at IS NULL`,
+        [req.params.id]
+      );
+      
+      await pool.query(
+        `INSERT INTO project_activity (project_id, activity_date, activity_type, activity_count)
+         VALUES ($1, CURRENT_DATE, 'issue_completed', 1)
+         ON CONFLICT (project_id, activity_date, activity_type)
+         DO UPDATE SET activity_count = project_activity.activity_count + 1`,
+        [result.rows[0].project_id]
+      );
     }
     
     res.json(result.rows[0]);
@@ -821,74 +846,9 @@ app.get('/api/continuous/sprint/:sprintId/status', async (req, res) => {
 });
 
 // ============ ANALYTICS API ============
-app.get('/api/analytics/velocity', async (req, res) => {
-  const { project_id, days = 30 } = req.query;
-  try {
-    const query = `
-      SELECT 
-        DATE(s.end_date) as sprint_date,
-        s.name as sprint_name,
-        s.completed_story_points as velocity
-      FROM sprints s
-      WHERE s.status = 'completed'
-      ${project_id ? 'AND s.project_id = $1' : ''}
-      AND s.end_date > CURRENT_DATE - INTERVAL '${parseInt(days)} days'
-      ORDER BY s.end_date
-    `;
-    
-    const result = await pool.query(query, project_id ? [project_id] : []);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/analytics/cycle-time', async (req, res) => {
-  const { project_id, days = 30 } = req.query;
-  try {
-    const query = `
-      SELECT 
-        DATE(completed_at) as date,
-        AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 3600) as avg_cycle_time_hours,
-        COUNT(*) as issues_completed
-      FROM issues
-      WHERE status = 'done'
-      AND completed_at IS NOT NULL
-      ${project_id ? 'AND project_id = $1' : ''}
-      AND completed_at > CURRENT_DATE - INTERVAL '${parseInt(days)} days'
-      GROUP BY DATE(completed_at)
-      ORDER BY date
-    `;
-    
-    const result = await pool.query(query, project_id ? [project_id] : []);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/analytics/token-usage', async (req, res) => {
-  const { project_id, days = 30 } = req.query;
-  try {
-    const query = `
-      SELECT 
-        DATE(created_at) as date,
-        SUM(token_cost) as total_tokens,
-        COUNT(*) as issues_processed
-      FROM issues
-      WHERE token_cost > 0
-      ${project_id ? 'AND project_id = $1' : ''}
-      AND created_at > CURRENT_DATE - INTERVAL '${parseInt(days)} days'
-      GROUP BY DATE(created_at)
-      ORDER BY date
-    `;
-    
-    const result = await pool.query(query, project_id ? [project_id] : []);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Mount comprehensive analytics routes
+const analyticsRoutes = require('./routes/analytics');
+app.use('/api', analyticsRoutes(pool));
 
 // ============ AI PROMPT TEMPLATES ============
 app.get('/api/prompts/templates', async (req, res) => {
