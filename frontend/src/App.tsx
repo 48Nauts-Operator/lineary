@@ -10,6 +10,11 @@ import DocsPage from './pages/DocsPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
+import BugReportForm from './components/BugReportForm'
+import FileUpload from './components/FileUpload'
+import VersionManager from './components/VersionManager'
+import DevelopmentTimeline from './components/DevelopmentTimeline'
+import ProjectColorPicker from './components/ProjectColorPicker'
 
 export const API_URL = window.location.hostname === 'localhost' 
   ? 'http://localhost:3399/api'
@@ -428,7 +433,26 @@ const App: React.FC = () => {
         {activeTab === 'autopilot' && (
           <AutopilotDashboard />
         )}
+        
+        {/* New Feature: Development Timeline */}
+        {activeTab === 'issues' && selectedProject && (
+          <div className="mt-6">
+            <DevelopmentTimeline projectId={selectedProject.id} />
+          </div>
+        )}
+        
+        {/* New Feature: Version Manager */}
+        {activeTab === 'sprints' && selectedProject && (
+          <div className="mt-6">
+            <VersionManager projectId={selectedProject.id} />
+          </div>
+        )}
       </main>
+      
+      {/* New Feature: Bug Report Form (floating button) */}
+      {selectedProject && (
+        <BugReportForm projectId={selectedProject.id} />
+      )}
       
       {/* Enhanced Issue Detail Modal */}
       {selectedIssue && (
