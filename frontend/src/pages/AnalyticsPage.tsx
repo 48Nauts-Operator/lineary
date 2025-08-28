@@ -77,11 +77,16 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
   const [activeMetric, setActiveMetric] = useState<'velocity' | 'cycle' | 'tokens'>('velocity')
 
   useEffect(() => {
+    console.log('AnalyticsPage mounted/updated - selectedProject:', selectedProject)
+    console.log('AnalyticsPage - projects list:', projects)
     fetchAnalytics()
   }, [selectedProject, timeRange])
 
   const fetchAnalytics = async () => {
+    console.log('fetchAnalytics called - selectedProject:', selectedProject)
+    
     if (!selectedProject) {
+      console.warn('No project selected in fetchAnalytics')
       toast.error('Please select a project to view analytics')
       setLoading(false)
       return
@@ -89,13 +94,16 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
     
     setLoading(true)
     try {
-      const response = await axios.get(
-        `${API_URL}/analytics/dashboard/${selectedProject.id}?days=${timeRange}`
-      )
+      const url = `${API_URL}/analytics/dashboard/${selectedProject.id}?days=${timeRange}`
+      console.log('Fetching analytics from:', url)
       
+      const response = await axios.get(url)
+      
+      console.log('Analytics response received:', response.data)
       setAnalytics(response.data)
-    } catch (error) {
-      console.error('Error fetching analytics:', error)
+    } catch (error: any) {
+      console.error('Error fetching analytics - full error:', error)
+      console.error('Error response:', error.response)
       toast.error('Failed to load analytics data')
       // Use mock data on error for demo purposes
       setAnalytics({
@@ -293,12 +301,26 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
     }))
   }
 
+  console.log('AnalyticsPage render - loading:', loading, 'selectedProject:', selectedProject?.name)
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-purple-500/30 rounded-full animate-spin border-t-purple-500 mx-auto"></div>
           <p className="text-gray-400 mt-4">Loading analytics...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!selectedProject) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-4xl mb-4">📊</div>
+          <h2 className="text-xl font-semibold text-white mb-2">No Project Selected</h2>
+          <p className="text-gray-400">Please select a project to view analytics</p>
         </div>
       </div>
     )
