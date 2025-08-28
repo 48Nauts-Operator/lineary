@@ -7,6 +7,7 @@ import EnhancedIssueDetail from './components/EnhancedIssueDetail'
 import IssuesPage from './pages/IssuesPage'
 import SprintsPage from './pages/SprintsPage'
 import DocsPage from './pages/DocsPage'
+import AnalyticsPage from './pages/AnalyticsPage'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
 
@@ -421,10 +422,7 @@ const App: React.FC = () => {
         )}
 
         {activeTab === 'analytics' && (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-xl font-semibold mb-4">Analytics Dashboard</h2>
-            <p className="text-gray-400">Analytics and metrics coming soon...</p>
-          </div>
+          <AnalyticsPage selectedProject={selectedProject} projects={projects} />
         )}
 
         {activeTab === 'autopilot' && (
