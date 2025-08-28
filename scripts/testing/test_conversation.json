@@ -1,0 +1,37 @@
+{
+  "user_id": "claude_user_001",
+  "project_id": "betty_test",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "conversation_data": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Help me implement JWT authentication for my FastAPI backend",
+        "timestamp": "2025-08-04T22:20:00Z",
+        "context": {
+          "user_intent": "implement authentication",
+          "problem_category": "security",
+          "files_mentioned": ["/backend/auth.py"],
+          "technologies_mentioned": ["FastAPI", "JWT"]
+        }
+      },
+      {
+        "role": "assistant", 
+        "content": "I'll help you implement JWT authentication. First, install python-jose for JWT handling...",
+        "timestamp": "2025-08-04T22:20:30Z",
+        "context": {
+          "technologies_mentioned": ["python-jose", "JWT", "FastAPI"]
+        }
+      }
+    ],
+    "outcome": "successful",
+    "summary": "Implemented JWT authentication for FastAPI backend",
+    "key_decisions": ["Use python-jose for JWT handling", "Store tokens in HTTP-only cookies"],
+    "lessons_learned": ["JWT secrets must be kept secure", "Token expiration should be configurable"],
+    "technologies_used": ["FastAPI", "JWT", "python-jose"],
+    "patterns_applied": ["middleware", "dependency_injection"]
+  },
+  "claude_version": "claude-3-5-sonnet",
+  "environment": "development",
+  "duration_minutes": 15
+}

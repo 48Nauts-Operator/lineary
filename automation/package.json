@@ -1,0 +1,20 @@
+{
+  "name": "betty-automation",
+  "version": "1.0.0",
+  "main": "claude-session-keeper.js",
+  "description": "Betty Memory System automation tools for persistent sessions and monitoring",
+  "scripts": {
+    "start": "node claude-session-keeper.js",
+    "tmux-start": "./tmux-claude-session.sh start",
+    "tmux-attach": "./tmux-claude-session.sh attach",
+    "tmux-status": "./tmux-claude-session.sh status",
+    "tmux-check": "./tmux-claude-session.sh check",
+    "tmux-services": "./tmux-claude-session.sh services"
+  },
+  "keywords": ["betty", "automation", "tmux", "session", "memory"],
+  "author": "Betty Memory System",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^24.15.0"
+  }
+}

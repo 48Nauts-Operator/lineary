@@ -1,0 +1,70 @@
+Lineary Community License 1.0
+
+Copyright © 2025 48Nauts
+
+---
+
+## 1. Definitions
+
+- **"Licensor"** means 48Nauts.
+- **"Licensed Work"** means the source code provided under this license.
+- **"Use"** means using, modifying, or creating derivative works from the Licensed Work.
+- **"Production Use"** means using the Licensed Work to provide a service to third parties, including as part of a hosted SaaS offering.
+
+---
+
+## 2. Grant of Rights
+
+- You are free to use, modify, and distribute the Licensed Work for non-production purposes, including:
+  - Personal projects
+  - Academic use
+  - Internal business use
+- You may not use the Licensed Work to offer any commercial hosted service that competes with Lineary without explicit written permission from the Licensor.
+
+---
+
+## 3. Change Date
+
+- After 36 months from January 1, 2025, this Licensed Work will automatically convert to the Apache 2.0 License.
+- At that point, you may use, modify, and distribute it without restriction.
+
+---
+
+## 4. Proprietary Features
+
+This license does not grant you any rights to proprietary components of Lineary, including but not limited to:
+- Sprint automation engine
+- Built-in analytics dashboards
+- Proprietary connectors (e.g., Bitbucket, Kit Kit Lab)
+- Hosted SaaS infrastructure
+
+These components remain closed-source and are governed by separate agreements.
+
+---
+
+## 5. No Warranty
+
+The Licensed Work is provided "AS IS", without warranty of any kind, express or implied.
+The Licensor is not responsible for damages resulting from the use of the Licensed Work.
+
+---
+
+## 6. Trademarks
+
+The names, logos, and branding of Lineary are not licensed under this agreement.
+You may not use them to imply endorsement without prior written consent.
+
+---
+
+## 7. Termination
+
+Any violation of this license's terms automatically terminates your rights to the Licensed Work.
+
+---
+
+## Summary (Non-Binding)
+
+- ✅ Free to use & modify for personal, internal, and non-commercial purposes
+- ❌ Cannot offer it as SaaS or sell a competing product
+- ⏳ Opens fully under Apache 2.0 after 3 years (January 1, 2028)
+- 🔒 Proprietary features remain closed-source

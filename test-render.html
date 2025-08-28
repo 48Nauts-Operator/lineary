@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Render</title>
+</head>
+<body>
+    <h1>Direct Test of Changes</h1>
+    
+    <h2>Test 1: Dropdown should be visible</h2>
+    <div style="background: #1a1a1a; color: white; padding: 20px;">
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <h1 style="color: #a78bfa;">Lineary</h1>
+            
+            <!-- Status Filter Dropdown -->
+            <div style="position: relative;">
+                <button style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #374151; border-radius: 8px; color: white; border: none;">
+                    <span>All Issues</span>
+                    <span style="color: #9ca3af;">(10)</span>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+            </div>
+            
+            <span style="color: #9ca3af;">Project management, rebuilt for AI</span>
+        </div>
+    </div>
+    
+    <h2>Test 2: Navigation without icons</h2>
+    <div style="background: #1a1a1a; padding: 10px;">
+        <nav style="display: flex; gap: 20px;">
+            <button style="color: #a78bfa; border-bottom: 2px solid #a78bfa; padding: 10px;">projects</button>
+            <button style="color: #9ca3af; border-bottom: 2px solid transparent; padding: 10px;">issues</button>
+            <button style="color: #9ca3af; border-bottom: 2px solid transparent; padding: 10px;">sprints</button>
+            <button style="color: #9ca3af; border-bottom: 2px solid transparent; padding: 10px;">analytics</button>
+        </nav>
+    </div>
+    
+    <p>If you can see the dropdown button above and navigation without icons, the changes are working.</p>
+</body>
+</html>

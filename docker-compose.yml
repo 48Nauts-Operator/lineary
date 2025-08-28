@@ -1,0 +1,102 @@
+# Lineary Task Management Platform
+# Stack: PostgreSQL + Redis + Node.js Backend + React Frontend
+
+version: '3.8'
+
+services:
+  # PostgreSQL - Primary database for projects, issues, sprints
+  postgres:
+    image: postgres:15-alpine
+    container_name: lineary_postgres
+    ports:
+      - "10620:5432"
+    environment:
+      - POSTGRES_DB=lineary_db
+      - POSTGRES_USER=lineary
+      - POSTGRES_PASSWORD=lineary_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lineary -d lineary_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis - Caching and real-time features
+  redis:
+    image: redis:7-alpine
+    container_name: lineary_redis
+    ports:
+      - "13620:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Lineary Backend API - Node.js/Express
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lineary_backend
+    ports:
+      - "3134:8000"
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - DATABASE_URL=postgresql://lineary:lineary_password@postgres:5432/lineary_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=lineary_jwt_secret_key_2024
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Lineary Frontend - React with Tailwind
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lineary_frontend
+    ports:
+      - "3399:80"
+    environment:
+      - REACT_APP_API_URL=https://lineary.blockonauts.io/api
+      - REACT_APP_ENVIRONMENT=production
+      - REACT_APP_WS_URL=wss://lineary.blockonauts.io/ws
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: lineary-network

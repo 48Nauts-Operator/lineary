@@ -1,0 +1,17 @@
+[Unit]
+Description=Claude to Betty Memory Sync Service
+After=network.target
+
+[Service]
+Type=simple
+User=jarvis
+WorkingDirectory=/home/jarvis/projects/Betty
+Environment="BETTY_API_KEY=betty_dev_test_key"
+ExecStart=/usr/bin/python3 /home/jarvis/projects/Betty/scripts/claude-conversation-watcher.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/claude-betty-sync.log
+StandardError=append:/var/log/claude-betty-sync-error.log
+
+[Install]
+WantedBy=multi-user.target
