@@ -481,7 +481,10 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50 text-center">
           <div className="text-3xl mb-2">📊</div>
           <p className="text-2xl font-bold text-white">
-            {analytics.velocity.reduce((sum, item) => sum + (item.completed || 0), 0)}
+            {Array.isArray(analytics.velocity) ? 
+              analytics.velocity.reduce((sum, item) => sum + (parseInt(item.story_points_completed) || 0), 0)
+              : 0
+            }
           </p>
           <p className="text-gray-400 text-sm">Total Story Points</p>
         </div>
@@ -489,8 +492,8 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50 text-center">
           <div className="text-3xl mb-2">⚡</div>
           <p className="text-2xl font-bold text-white">
-            {analytics.cycleTime.length > 0 ? 
-              (analytics.cycleTime.reduce((sum, item) => sum + (item.avgCycleTime || 0), 0) / analytics.cycleTime.length).toFixed(1)
+            {analytics.project?.avg_cycle_time_hours ? 
+              (parseFloat(analytics.project.avg_cycle_time_hours) / 24).toFixed(1)
               : '0'
             }
           </p>
@@ -500,7 +503,10 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50 text-center">
           <div className="text-3xl mb-2">💰</div>
           <p className="text-2xl font-bold text-white">
-            ${analytics.tokenUsage.reduce((sum, item) => sum + (item.cost || 0), 0).toFixed(2)}
+            ${analytics.tokenUsage?.summary?.total_cost ? 
+              parseFloat(analytics.tokenUsage.summary.total_cost.toString()).toFixed(2)
+              : '0.00'
+            }
           </p>
           <p className="text-gray-400 text-sm">Total AI Cost</p>
         </div>
@@ -508,13 +514,12 @@ const AnalyticsPage: React.FC<Props> = ({ selectedProject, projects }) => {
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50 text-center">
           <div className="text-3xl mb-2">🎯</div>
           <p className="text-2xl font-bold text-white">
-            {analytics.velocity.length > 0 ? 
-              Math.round((analytics.velocity.reduce((sum, item) => sum + (item.completed || 0), 0) / 
-                         analytics.velocity.reduce((sum, item) => sum + (item.planned || 0), 0)) * 100)
+            {analytics.project?.completed_issues && analytics.project?.total_issues ? 
+              Math.round((parseInt(analytics.project.completed_issues) / parseInt(analytics.project.total_issues)) * 100)
               : 0
             }%
           </p>
-          <p className="text-gray-400 text-sm">Delivery Rate</p>
+          <p className="text-gray-400 text-sm">Completion Rate</p>
         </div>
       </div>
 
