@@ -50,10 +50,10 @@ module.exports = (pool) => {
         const tokenUsage = await client.query(`
           SELECT 
             DATE(created_at) as date,
-            SUM(prompt_tokens) as prompt_tokens,
-            SUM(completion_tokens) as completion_tokens,
+            SUM(input_tokens) as prompt_tokens,
+            SUM(output_tokens) as completion_tokens,
             SUM(total_tokens) as total_tokens,
-            SUM(cost) as total_cost,
+            SUM(estimated_cost) as total_cost,
             COUNT(*) as usage_count
           FROM token_usage
           WHERE project_id = $1
@@ -66,9 +66,8 @@ module.exports = (pool) => {
         const timeTracking = await client.query(`
           SELECT 
             DATE(created_at) as date,
-            SUM(hours_estimated) as hours_estimated,
-            SUM(hours_actual) as hours_actual,
-            SUM(hours_saved) as hours_saved,
+            SUM(time_spent_minutes) as minutes_spent,
+            SUM(ai_time_saved_minutes) as minutes_saved,
             COUNT(*) as tasks_tracked
           FROM time_tracking
           WHERE project_id = $1
@@ -80,11 +79,11 @@ module.exports = (pool) => {
         // Calculate AI time saved
         const aiTimeSaved = await client.query(`
           SELECT 
-            COALESCE(SUM(hours_saved), 0) as total_hours_saved,
+            COALESCE(SUM(ai_time_saved_minutes) / 60.0, 0) as total_hours_saved,
             COUNT(*) as ai_assisted_tasks
           FROM time_tracking
           WHERE project_id = $1
-          AND hours_saved > 0
+          AND ai_time_saved_minutes > 0
         `, [projectId]);
 
         // Get recent issues velocity
@@ -178,10 +177,10 @@ module.exports = (pool) => {
     try {
       const result = await pool.query(`
         INSERT INTO token_usage 
-        (project_id, model_name, prompt_tokens, completion_tokens, total_tokens, cost)
+        (project_id, model_name, input_tokens, output_tokens, total_tokens, estimated_cost)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
-      `, [project_id, model_name, prompt_tokens, completion_tokens, total_tokens, cost]);
+      `, [project_id, model_name, prompt_tokens || 0, completion_tokens || 0, total_tokens || 0, cost]);
       
       res.json(result.rows[0]);
     } catch (error) {
@@ -194,18 +193,18 @@ module.exports = (pool) => {
     const { 
       project_id,
       issue_id,
-      hours_estimated = 0,
-      hours_actual = 0,
-      hours_saved = 0
+      time_spent_minutes = 0,
+      ai_time_saved_minutes = 0,
+      user_id = null
     } = req.body;
     
     try {
       const result = await pool.query(`
         INSERT INTO time_tracking 
-        (project_id, issue_id, hours_estimated, hours_actual, hours_saved)
+        (project_id, issue_id, time_spent_minutes, ai_time_saved_minutes, user_id)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *
-      `, [project_id, issue_id, hours_estimated, hours_actual, hours_saved]);
+      `, [project_id, issue_id, time_spent_minutes, ai_time_saved_minutes, user_id]);
       
       res.json(result.rows[0]);
     } catch (error) {
@@ -254,12 +253,12 @@ module.exports = (pool) => {
     try {
       const result = await pool.query(`
         SELECT 
-          COALESCE(SUM(hours_saved), 0) as total_hours_saved,
+          COALESCE(SUM(ai_time_saved_minutes) / 60.0, 0) as total_hours_saved,
           COUNT(DISTINCT issue_id) as ai_assisted_issues,
-          AVG(hours_saved) as avg_hours_per_issue
+          AVG(ai_time_saved_minutes / 60.0) as avg_hours_per_issue
         FROM time_tracking
         WHERE project_id = $1
-        AND hours_saved > 0
+        AND ai_time_saved_minutes > 0
       `, [projectId]);
       
       const data = result.rows[0];
