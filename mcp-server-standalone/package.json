@@ -1,0 +1,34 @@
+{
+  "name": "@lineary/mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Lineary - AI-powered project management tool integration for Claude",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "lineary-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "claude",
+    "lineary",
+    "project-management",
+    "ai",
+    "task-management"
+  ],
+  "author": "Lineary Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
