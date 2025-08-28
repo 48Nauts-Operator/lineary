@@ -35,9 +35,10 @@ try {
   // Config file is optional
 }
 
-// Log startup info to stderr (visible in Claude logs)
+// Log startup info to stderr (visible in Claude logs) - sanitized for security
 console.error(`🚀 Lineary MCP Server v1.0.0
 📡 API URL: ${config.apiUrl}
+${config.apiKey ? '🔑 API Key: ***configured***' : '🔓 API Key: not configured'}
 ${config.defaultProjectId ? `📋 Default Project: ${config.defaultProjectId}` : ''}
 `);
 
