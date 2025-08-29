@@ -568,7 +568,10 @@ app.get('/api/sprints', async (req, res) => {
     let query = `
       SELECT s.*, 
         COUNT(DISTINCT i.id) as issue_count,
+        COUNT(DISTINCT CASE WHEN i.status = 'done' THEN i.id END) as completed_count,
+        COUNT(DISTINCT CASE WHEN i.status IN ('in_progress', 'in_review') THEN i.id END) as in_progress_count,
         SUM(i.story_points) as total_points,
+        SUM(CASE WHEN i.status = 'done' THEN i.story_points ELSE 0 END) as completed_points,
         AVG(i.completion_scope) as avg_completion
       FROM sprints s
       LEFT JOIN issues i ON i.sprint_id = s.id
@@ -589,6 +592,16 @@ app.get('/api/sprints', async (req, res) => {
     query += ' GROUP BY s.id ORDER BY s.created_at DESC';
     
     const result = await pool.query(query, params);
+    
+    // Also fetch the actual issues for each sprint
+    for (let sprint of result.rows) {
+      const issuesResult = await pool.query(
+        'SELECT * FROM issues WHERE sprint_id = $1',
+        [sprint.id]
+      );
+      sprint.issues = issuesResult.rows;
+    }
+    
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });

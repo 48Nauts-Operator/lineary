@@ -79,12 +79,22 @@ const IssuesPage: React.FC<Props> = ({ selectedProject, projects, statusFilter, 
 
   // Use passed filteredIssues if available, otherwise filter locally
   const displayIssues = filteredIssues || issues.filter(issue => {
-    if (filterStatus === 'active') {
-      return !['done', 'cancelled'].includes(issue.status)
+    if (filterStatus === 'all') {
+      return true
+    } else if (filterStatus === 'active') {
+      return ['in_progress', 'in_review'].includes(issue.status)
     } else if (filterStatus === 'completed') {
       return issue.status === 'done'
+    } else if (filterStatus === 'backlog') {
+      return issue.status === 'backlog'
+    } else if (filterStatus === 'sprint') {
+      return ['todo', 'in_progress', 'in_review'].includes(issue.status)
+    } else if (filterStatus === 'processing') {
+      return ['in_progress', 'in_review'].includes(issue.status)
+    } else if (filterStatus === 'testing') {
+      return issue.status === 'testing'
     }
-    return true
+    return issue.status === filterStatus
   })
 
   const groupedIssues = displayIssues.reduce((acc, issue) => {

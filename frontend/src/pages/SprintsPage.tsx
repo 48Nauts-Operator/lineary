@@ -136,12 +136,22 @@ const SprintsPage: React.FC<Props> = ({ selectedProject, projects }) => {
   }
 
   const getSprintProgress = (sprint: Sprint) => {
+    // Use backend-calculated values if available
+    if (sprint.completed_count !== undefined && sprint.issue_count) {
+      return Math.round((sprint.completed_count / sprint.issue_count) * 100)
+    }
+    // Fallback to client-side calculation
     const completedIssues = sprint.issues?.filter(issue => issue.status === 'done').length || 0
     const totalIssues = sprint.issues?.length || 0
     return totalIssues > 0 ? Math.round((completedIssues / totalIssues) * 100) : 0
   }
 
   const getSprintVelocity = (sprint: Sprint) => {
+    // Use backend-calculated value if available
+    if (sprint.completed_points !== undefined) {
+      return sprint.completed_points
+    }
+    // Fallback to client-side calculation
     const completedPoints = sprint.issues
       ?.filter(issue => issue.status === 'done')
       .reduce((sum, issue) => sum + (issue.story_points || 0), 0) || 0
@@ -254,11 +264,11 @@ const SprintsPage: React.FC<Props> = ({ selectedProject, projects }) => {
                 
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <p className="text-sm font-medium text-white">{sprint.issues?.length || 0}</p>
+                    <p className="text-sm font-medium text-white">{sprint.issue_count || sprint.issues?.length || 0}</p>
                     <p className="text-xs text-gray-400">Issues</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">{velocity}</p>
+                    <p className="text-sm font-medium text-white">{sprint.completed_points || velocity}</p>
                     <p className="text-xs text-gray-400">Points</p>
                   </div>
                   <div>
