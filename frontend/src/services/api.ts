@@ -160,23 +160,12 @@ const api = axios.create({
   },
 })
 
-// Request interceptor for auth — attach Stack Auth bearer token on every API call.
-import { stackApp } from '../auth/stack'
-
-api.interceptors.request.use(async (config) => {
-  try {
-    const user = await stackApp.getUser()
-    if (user) {
-      const { accessToken } = await user.getAuthJson()
-      if (accessToken) {
-        config.headers.Authorization = `Bearer ${accessToken}`
-      }
-    }
-  } catch {
-    // No session yet — requests to protected endpoints will 401 and trigger redirect.
-  }
-  return config
-})
+// Request/response interceptors for this instance are wired centrally in
+// `src/auth/stack.ts` on the axios singleton, so every caller (including
+// legacy components using bare `axios` imports) gets the Stack Auth bearer.
+// This instance inherits via attaching the same interceptor explicitly.
+import { attachBearer } from '../auth/stack'
+api.interceptors.request.use(attachBearer)
 
 // Enhanced error logging function
 const logError = (error: any) => {
