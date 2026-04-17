@@ -17,9 +17,8 @@ import VersionManager from './components/VersionManager'
 import DevelopmentTimeline from './components/DevelopmentTimeline'
 import ProjectColorPicker from './components/ProjectColorPicker'
 
-export const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3399/api'
-  : 'https://ai-linear.blockonauts.io/api'
+// Relative: nginx inside the frontend container proxies /api/ to the backend.
+export const API_URL = '/api'
 
 export interface Project {
   id: string

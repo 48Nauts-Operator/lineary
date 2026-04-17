@@ -1,0 +1,93 @@
+# Production compose for Coolify deployment.
+# - No host port bindings (Coolify's Traefik handles external routing).
+# - No source bind-mounts (the built image is authoritative).
+# - Frontend is the only service exposed publicly; it proxies /api/ to backend via its own nginx.
+# - Postgres + Redis + backend stay on the internal Coolify-managed network.
+# - Env vars in ${VAR} form are populated by Coolify's env settings.
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lineary_db}
+      POSTGRES_USER: ${POSTGRES_USER:-lineary}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: --encoding=UTF-8
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lineary} -d ${POSTGRES_DB:-lineary_db}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 8000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lineary}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lineary_db}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      STACK_PROJECT_ID: ${STACK_PROJECT_ID}
+      STACK_SECRET_SERVER_KEY: ${STACK_SECRET_SERVER_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_STACK_PROJECT_ID: ${STACK_PROJECT_ID}
+    depends_on:
+      - backend
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    # Traefik labels for Coolify — route lineary.ai to this container on port 80.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lineary.rule=Host(`lineary.ai`) || Host(`www.lineary.ai`)"
+      - "traefik.http.routers.lineary.entrypoints=https"
+      - "traefik.http.routers.lineary.tls=true"
+      - "traefik.http.routers.lineary.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lineary.loadbalancer.server.port=80"
+
+volumes:
+  postgres_data:
+  redis_data:
