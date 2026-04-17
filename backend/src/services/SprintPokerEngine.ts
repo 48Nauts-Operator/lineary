@@ -91,7 +91,7 @@ export class SprintPokerEngine {
     });
     
     // Check for multiple file mentions
-    if (text.match(/\b(files|components|modules|services)\b/g)?.length > 1) {
+    if ((text.match(/\b(files|components|modules|services)\b/g)?.length ?? 0) > 1) {
       score += 2;
     }
     
@@ -224,7 +224,7 @@ export class SprintPokerEngine {
       21: 40
     };
     
-    let hours = baseHours[storyPoints] || 8;
+    let hours = (baseHours as Record<number, number>)[storyPoints] || 8;
     
     // Adjust for uncertainty
     if (complexity.uncertainty > 7) {

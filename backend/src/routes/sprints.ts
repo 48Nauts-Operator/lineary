@@ -13,10 +13,10 @@ export function sprintRoutes(context: any) {
     try {
       const { project_id } = req.query;
       const sprints = await db.getSprints(project_id as string);
-      res.json(sprints);
+      return res.json(sprints);
     } catch (error) {
       console.error('Get sprints error:', error);
-      res.status(500).json({ error: 'Failed to fetch sprints' });
+      return res.status(500).json({ error: 'Failed to fetch sprints' });
     }
   });
 
@@ -31,10 +31,10 @@ export function sprintRoutes(context: any) {
       // Get sprint issues
       const issues = await db.getSprintIssues(sprint.id);
       
-      res.json({ ...sprint, issues });
+      return res.json({ ...sprint, issues });
     } catch (error) {
       console.error('Get sprint error:', error);
-      res.status(500).json({ error: 'Failed to fetch sprint' });
+      return res.status(500).json({ error: 'Failed to fetch sprint' });
     }
   });
 
@@ -65,10 +65,10 @@ export function sprintRoutes(context: any) {
       await db.logActivity('sprint', sprint.id, 'created', { name, duration_hours });
       broadcast('sprint_created', sprint);
 
-      res.status(201).json(sprint);
+      return res.status(201).json(sprint);
     } catch (error) {
       console.error('Create sprint error:', error);
-      res.status(500).json({ error: 'Failed to create sprint' });
+      return res.status(500).json({ error: 'Failed to create sprint' });
     }
   });
 
@@ -100,7 +100,7 @@ export function sprintRoutes(context: any) {
       // Analyze sprint capacity
       const capacity = await sprintPoker.analyzeSprintCapacity(
         sprint.duration_hours,
-        validIssues.map(issue => ({
+        validIssues.map((issue: any) => ({
           id: issue.id,
           title: issue.title,
           description: issue.description
@@ -121,14 +121,14 @@ export function sprintRoutes(context: any) {
 
       broadcast('sprint_updated', { sprint, capacity });
 
-      res.json({
+      return res.json({
         sprint,
         capacity,
         added_issues: capacity.recommended
       });
     } catch (error) {
       console.error('Add sprint issues error:', error);
-      res.status(500).json({ error: 'Failed to add issues to sprint' });
+      return res.status(500).json({ error: 'Failed to add issues to sprint' });
     }
   });
 
@@ -156,10 +156,10 @@ export function sprintRoutes(context: any) {
       await db.logActivity('sprint', sprint.id, 'started', { start_date: startDate });
       broadcast('sprint_started', updatedSprint);
 
-      res.json(updatedSprint);
+      return res.json(updatedSprint);
     } catch (error) {
       console.error('Start sprint error:', error);
-      res.status(500).json({ error: 'Failed to start sprint' });
+      return res.status(500).json({ error: 'Failed to start sprint' });
     }
   });
 
@@ -177,9 +177,9 @@ export function sprintRoutes(context: any) {
 
       // Get sprint statistics
       const issues = await db.getSprintIssues(sprint.id);
-      const completedIssues = issues.filter(issue => issue.status === 'done');
-      const totalPoints = issues.reduce((sum, issue) => sum + (issue.story_points || 0), 0);
-      const completedPoints = completedIssues.reduce((sum, issue) => sum + (issue.story_points || 0), 0);
+      const completedIssues = issues.filter((issue: any) => issue.status === 'done');
+      const totalPoints = issues.reduce((sum: number, issue: any) => sum + (issue.story_points || 0), 0);
+      const completedPoints = completedIssues.reduce((sum: number, issue: any) => sum + (issue.story_points || 0), 0);
 
       const updatedSprint = await db.updateSprint(sprint.id, {
         status: 'completed',
@@ -205,10 +205,10 @@ export function sprintRoutes(context: any) {
         }
       });
 
-      res.json(updatedSprint);
+      return res.json(updatedSprint);
     } catch (error) {
       console.error('Complete sprint error:', error);
-      res.status(500).json({ error: 'Failed to complete sprint' });
+      return res.status(500).json({ error: 'Failed to complete sprint' });
     }
   });
 
@@ -232,17 +232,17 @@ export function sprintRoutes(context: any) {
 
       const capacity = await sprintPoker.analyzeSprintCapacity(
         available_hours,
-        validIssues.map(issue => ({
+        validIssues.map((issue: any) => ({
           id: issue.id,
           title: issue.title,
           description: issue.description
         }))
       );
 
-      res.json(capacity);
+      return res.json(capacity);
     } catch (error) {
       console.error('Capacity analysis error:', error);
-      res.status(500).json({ error: 'Failed to analyze capacity' });
+      return res.status(500).json({ error: 'Failed to analyze capacity' });
     }
   });
 

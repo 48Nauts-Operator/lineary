@@ -13,10 +13,10 @@ export function issueRoutes(context: any) {
     try {
       const { project_id } = req.query;
       const issues = await db.getIssues(project_id as string);
-      res.json(issues);
+      return res.json(issues);
     } catch (error) {
       console.error('Get issues error:', error);
-      res.status(500).json({ error: 'Failed to fetch issues' });
+      return res.status(500).json({ error: 'Failed to fetch issues' });
     }
   });
 
@@ -27,10 +27,10 @@ export function issueRoutes(context: any) {
       if (!issue) {
         return res.status(404).json({ error: 'Issue not found' });
       }
-      res.json(issue);
+      return res.json(issue);
     } catch (error) {
       console.error('Get issue error:', error);
-      res.status(500).json({ error: 'Failed to fetch issue' });
+      return res.status(500).json({ error: 'Failed to fetch issue' });
     }
   });
 
@@ -83,10 +83,10 @@ export function issueRoutes(context: any) {
       await db.logActivity('issue', issue.id, 'created', { title, estimation });
       broadcast('issue_created', issue);
 
-      res.status(201).json(issue);
+      return res.status(201).json(issue);
     } catch (error) {
       console.error('Create issue error:', error);
-      res.status(500).json({ error: 'Failed to create issue' });
+      return res.status(500).json({ error: 'Failed to create issue' });
     }
   });
 
@@ -101,10 +101,10 @@ export function issueRoutes(context: any) {
       await db.logActivity('issue', issue.id, 'updated', updateData);
       broadcast('issue_updated', issue);
 
-      res.json(issue);
+      return res.json(issue);
     } catch (error) {
       console.error('Update issue error:', error);
-      res.status(500).json({ error: 'Failed to update issue' });
+      return res.status(500).json({ error: 'Failed to update issue' });
     }
   });
 
@@ -128,10 +128,10 @@ export function issueRoutes(context: any) {
         ai_estimation: estimation
       });
 
-      res.json(estimation);
+      return res.json(estimation);
     } catch (error) {
       console.error('Issue estimation error:', error);
-      res.status(500).json({ error: 'Failed to estimate issue' });
+      return res.status(500).json({ error: 'Failed to estimate issue' });
     }
   });
 
@@ -147,10 +147,10 @@ export function issueRoutes(context: any) {
       
       broadcast('quality_check_completed', { issue_id: issue.id, report: qualityReport });
 
-      res.json(qualityReport);
+      return res.json(qualityReport);
     } catch (error) {
       console.error('Quality check error:', error);
-      res.status(500).json({ error: 'Failed to run quality check' });
+      return res.status(500).json({ error: 'Failed to run quality check' });
     }
   });
 
@@ -174,10 +174,10 @@ export function issueRoutes(context: any) {
       
       broadcast('code_review_completed', { issue_id: issue.id, review });
 
-      res.json(review);
+      return res.json(review);
     } catch (error) {
       console.error('Code review error:', error);
-      res.status(500).json({ error: 'Failed to review code' });
+      return res.status(500).json({ error: 'Failed to review code' });
     }
   });
 
@@ -201,10 +201,10 @@ export function issueRoutes(context: any) {
       
       broadcast('tests_generated', { issue_id: issue.id, tests });
 
-      res.json(tests);
+      return res.json(tests);
     } catch (error) {
       console.error('Test generation error:', error);
-      res.status(500).json({ error: 'Failed to generate tests' });
+      return res.status(500).json({ error: 'Failed to generate tests' });
     }
   });
 

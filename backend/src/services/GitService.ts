@@ -211,7 +211,7 @@ export class GitService {
         maxCount: limit
       });
       
-      return log.all;
+      return [...log.all];
     } catch (error) {
       console.error('Failed to get commit history:', error);
       return [];

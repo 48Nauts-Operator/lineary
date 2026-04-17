@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [production, development]
+  pull_request:
+    branches: [production, development]
+
+jobs:
+  backend:
+    name: Backend
+    uses: 48Nauts-Operator/ci-workflows/.github/workflows/node-ci.yml@main
+    with:
+      working-directory: backend
+      node-version: "20"
+      package-manager: npm
+      run-typecheck: true
+      build: true
+      test-command: "npm test"
+
+  frontend:
+    name: Frontend
+    uses: 48Nauts-Operator/ci-workflows/.github/workflows/node-ci.yml@main
+    with:
+      working-directory: frontend
+      node-version: "20"
+      package-manager: npm
+      run-typecheck: true
+      build: true
+
+  mcp-server:
+    name: MCP Server
+    uses: 48Nauts-Operator/ci-workflows/.github/workflows/node-ci.yml@main
+    with:
+      working-directory: mcp-server
+      node-version: "20"
+      package-manager: npm
+      run-typecheck: false
+      build: false
