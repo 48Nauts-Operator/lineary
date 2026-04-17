@@ -57,6 +57,8 @@ services:
       - JWT_SECRET=lineary_jwt_secret_key_2024
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - STACK_PROJECT_ID=${STACK_PROJECT_ID}
+      - STACK_SECRET_SERVER_KEY=${STACK_SECRET_SERVER_KEY}
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -75,6 +77,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_STACK_PROJECT_ID: ${STACK_PROJECT_ID}
+        VITE_STACK_PUBLISHABLE_CLIENT_KEY: ${STACK_PUBLISHABLE_CLIENT_KEY}
     container_name: lineary_frontend
     ports:
       - "3399:80"

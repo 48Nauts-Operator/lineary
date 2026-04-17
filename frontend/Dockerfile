@@ -21,6 +21,12 @@ COPY src/ ./src/
 COPY public/ ./public/
 COPY index.html ./
 
+# Stack Auth credentials baked into the Vite build
+ARG VITE_STACK_PROJECT_ID
+ARG VITE_STACK_PUBLISHABLE_CLIENT_KEY
+ENV VITE_STACK_PROJECT_ID=$VITE_STACK_PROJECT_ID
+ENV VITE_STACK_PUBLISHABLE_CLIENT_KEY=$VITE_STACK_PUBLISHABLE_CLIENT_KEY
+
 # Build the application
 RUN npm run build
 

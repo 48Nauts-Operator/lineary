@@ -24,6 +24,13 @@ logger = logging.getLogger('lineary-mcp')
 class LinearyMCPServer:
     def __init__(self):
         self.api_url = os.getenv('LINEARY_API_URL', 'https://ai-linear.blockonauts.io/api')
+        self.api_key = os.getenv('LINEARY_API_KEY')
+        if not self.api_key:
+            logger.warning(
+                "LINEARY_API_KEY not set. Generate one in the Lineary web UI "
+                "(Account tab) and export LINEARY_API_KEY=lnk_... before launching."
+            )
+        self.auth_headers = {'X-API-Key': self.api_key} if self.api_key else {}
         logger.info(f"Lineary MCP Server initialized - API: {self.api_url}")
         
     async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -235,7 +242,7 @@ class LinearyMCPServer:
     
     async def create_project(self, args: Dict) -> Dict:
         """Create a new project"""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
             async with session.post(
                 f"{self.api_url}/projects",
                 json={
@@ -256,7 +263,7 @@ class LinearyMCPServer:
     
     async def create_issue(self, args: Dict) -> Dict:
         """Create a new issue"""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
             async with session.post(
                 f"{self.api_url}/issues",
                 json={
@@ -281,7 +288,7 @@ class LinearyMCPServer:
     
     async def list_projects(self, args: Dict) -> Dict:
         """List all projects"""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
             async with session.get(f"{self.api_url}/projects") as response:
                 if response.status == 200:
                     data = await response.json()
@@ -294,7 +301,7 @@ class LinearyMCPServer:
     
     async def list_issues(self, args: Dict) -> Dict:
         """List issues"""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
             async with session.get(f"{self.api_url}/issues") as response:
                 if response.status == 200:
                     data = await response.json()
@@ -317,7 +324,7 @@ class LinearyMCPServer:
     
     async def update_issue(self, args: Dict) -> Dict:
         """Update an issue"""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
             update_data = {}
             if 'status' in args:
                 update_data['status'] = args['status']
@@ -341,7 +348,7 @@ class LinearyMCPServer:
     
     async def create_sprint(self, args: Dict) -> Dict:
         """Create a new sprint"""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
             async with session.post(
                 f"{self.api_url}/sprints",
                 json={
@@ -362,7 +369,7 @@ class LinearyMCPServer:
     
     async def add_to_sprint(self, args: Dict) -> Dict:
         """Add issues to sprint"""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
             for issue_id in args['issue_ids']:
                 async with session.patch(
                     f"{self.api_url}/issues/{issue_id}",
@@ -421,7 +428,7 @@ class LinearyMCPServer:
         
         # Create the tasks
         created_tasks = []
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
             for task in tasks:
                 async with session.post(
                     f"{self.api_url}/issues",
@@ -494,7 +501,7 @@ class LinearyMCPServer:
         uri = params.get('uri')
         
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(headers=self.auth_headers) as session:
                 if uri == 'lineary://projects':
                     async with session.get(f"{self.api_url}/projects") as response:
                         data = await response.json() if response.status == 200 else {'error': 'Failed'}
