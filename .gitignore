@@ -74,6 +74,8 @@ backups/
 *.backup
 *.dump
 *.sql.gz
+*.tar.gz
+lineary-backup-*
 
 # Cache
 .cache/

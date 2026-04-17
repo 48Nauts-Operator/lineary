@@ -931,7 +931,8 @@ app.use('/api', oauthRoutes(pool));
 
 // Mount webhook routes
 const webhookRoutes = require('./routes/webhooks');
-const githubAppRoutes = require('./routes/github-app');
+// Temporarily disabled due to @octokit/app ESM incompatibility
+// const githubAppRoutes = require('./routes/github-app');
 const aiFeedbackRoutes = require('./routes/ai-feedback');
 app.use('/api', webhookRoutes(pool));
 
@@ -940,7 +941,7 @@ app.use((req, res, next) => {
   req.db = pool;
   next();
 });
-app.use('/api', githubAppRoutes);
+// app.use('/api', githubAppRoutes); // Temporarily disabled
 app.use('/api', aiFeedbackRoutes);
 
 // ============ TAGS API ============

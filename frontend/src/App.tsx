@@ -63,6 +63,9 @@ export interface Sprint {
   issues?: Issue[]
   planned_story_points?: number
   completed_story_points?: number
+  issue_count?: number
+  completed_count?: number
+  completed_points?: number
 }
 
 export interface Activity {
