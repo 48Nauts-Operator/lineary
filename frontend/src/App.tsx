@@ -3,7 +3,9 @@
 
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import EnhancedIssueDetail from './components/EnhancedIssueDetail'
+// EnhancedIssueDetail is the legacy kitchen-sink modal; kept in src/ for now
+// (unused) until the IssueStream replacement is fully proven in prod.
+import IssueStream from './components/IssueStream'
 import IssuesPage from './pages/IssuesPage'
 import SprintsPage from './pages/SprintsPage'
 import DocsPage from './pages/DocsPage'
@@ -11,6 +13,7 @@ import AnalyticsPage from './pages/AnalyticsPage'
 import { AccountPage } from './pages/Settings/Account'
 import { ProjectModeDialog } from './components/ProjectModeDialog'
 import { GitHubSyncBadge } from './components/GitHubSyncBadge'
+import { ProjectPulse } from './components/ProjectPulse'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
 import BugReportForm from './components/BugReportForm'
@@ -237,9 +240,10 @@ const App: React.FC = () => {
       <main className="container mx-auto px-4 py-8">
         {activeTab === 'projects' && (
           <div>
+            {selectedProject && <ProjectPulse projectId={selectedProject.id} />}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Projects</h2>
-              <button 
+              <button
                 onClick={() => setShowNewProjectForm(true)}
                 className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
@@ -470,9 +474,9 @@ const App: React.FC = () => {
         <BugReportForm projectId={selectedProject.id} />
       )}
       
-      {/* Enhanced Issue Detail Modal */}
+      {/* Issue detail — Linear-style stream (replaces EnhancedIssueDetail as the default). */}
       {selectedIssue && (
-        <EnhancedIssueDetail
+        <IssueStream
           issue={selectedIssue}
           isOpen={showIssueDetail}
           onClose={() => {

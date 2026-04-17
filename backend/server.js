@@ -383,6 +383,62 @@ app.patch('/api/projects/:id', async (req, res) => {
 });
 
 // Project documentation
+// Pulse — live feed of recent events in a project (activities + comments).
+// The global project-ownership regex guard already gates this by owner_id.
+app.get('/api/projects/:id/pulse', async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+  try {
+    const { rows } = await pool.query(
+      `
+      SELECT kind, id, issue_id, issue_title, issue_key, activity_type, description,
+             user_id, user_type, metadata, created_at
+      FROM (
+        SELECT 'activity' AS kind,
+               a.id::text AS id,
+               a.issue_id::text AS issue_id,
+               i.title AS issue_title,
+               substring(i.id::text from 1 for 7) AS issue_key,
+               a.activity_type,
+               a.description,
+               NULL::text AS user_id,
+               a.user_type,
+               a.metadata,
+               a.created_at
+        FROM issue_activities a
+        JOIN issues i ON i.id = a.issue_id
+        WHERE i.project_id = $1
+
+        UNION ALL
+
+        SELECT 'comment' AS kind,
+               c.id::text,
+               c.issue_id::text,
+               i.title,
+               substring(i.id::text from 1 for 7),
+               'comment'::text AS activity_type,
+               left(c.content, 180) AS description,
+               c.user_id,
+               c.user_type,
+               CASE WHEN c.github_comment_id IS NOT NULL
+                    THEN jsonb_build_object('github_comment_id', c.github_comment_id, 'sync_origin', c.sync_origin)
+                    ELSE '{}'::jsonb END AS metadata,
+               c.created_at
+        FROM issue_comments c
+        JOIN issues i ON i.id = c.issue_id
+        WHERE i.project_id = $1
+      ) feed
+      ORDER BY created_at DESC
+      LIMIT $2
+      `,
+      [req.params.id, limit]
+    );
+    res.json({ events: rows });
+  } catch (error) {
+    console.error('pulse query failed:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/projects/:id/documentation', async (req, res) => {
   try {
     const result = await pool.query(
