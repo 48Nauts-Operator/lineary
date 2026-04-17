@@ -58,7 +58,7 @@ export function mcpRoutes(context: any) {
       await db.logActivity('issue', issue.id, 'created_via_mcp', { title, estimation });
       broadcast('issue_created', issue);
 
-      res.json({
+      return res.json({
         success: true,
         issue: {
           id: issue.id,
@@ -74,9 +74,9 @@ export function mcpRoutes(context: any) {
       });
     } catch (error) {
       console.error('MCP create issue error:', error);
-      res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        error: 'Failed to create issue' 
+        error: 'Failed to create issue'
       });
     }
   });
@@ -102,7 +102,7 @@ export function mcpRoutes(context: any) {
 
       // Get available issues
       const issues = await db.getIssues(project_id);
-      const backlogIssues = issues.filter(issue => 
+      const backlogIssues = issues.filter((issue: any) =>
         issue.status === 'backlog' && issue.description
       );
 
@@ -116,7 +116,7 @@ export function mcpRoutes(context: any) {
       // Analyze capacity and select optimal issues
       const capacity = await sprintPoker.analyzeSprintCapacity(
         hours,
-        backlogIssues.map(issue => ({
+        backlogIssues.map((issue: any) => ({
           id: issue.id,
           title: issue.title,
           description: issue.description
@@ -137,7 +137,7 @@ export function mcpRoutes(context: any) {
         
         // Update issues status to 'todo'
         await Promise.all(
-          capacity.recommended.map(issueId =>
+          capacity.recommended.map((issueId: any) =>
             db.updateIssue(issueId, { status: 'todo' })
           )
         );
@@ -151,7 +151,7 @@ export function mcpRoutes(context: any) {
 
       broadcast('sprint_created', sprint);
 
-      res.json({
+      return res.json({
         success: true,
         sprint: {
           id: sprint.id,
@@ -164,9 +164,9 @@ export function mcpRoutes(context: any) {
       });
     } catch (error) {
       console.error('MCP start sprint error:', error);
-      res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        error: 'Failed to start sprint' 
+        error: 'Failed to start sprint'
       });
     }
   });
@@ -214,16 +214,16 @@ export function mcpRoutes(context: any) {
       await db.logActivity('issue', issue.id, 'code_reviewed_via_mcp');
       broadcast('code_review_completed', { issue_id: issue.id, review });
 
-      res.json({
+      return res.json({
         success: true,
         review,
         message: `Code review completed for issue "${issue.title}"`
       });
     } catch (error) {
       console.error('MCP code review error:', error);
-      res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        error: 'Failed to review code' 
+        error: 'Failed to review code'
       });
     }
   });
@@ -260,16 +260,16 @@ export function mcpRoutes(context: any) {
       await db.logActivity('issue', issue.id, 'quality_check_via_mcp');
       broadcast('quality_check_completed', { issue_id: issue.id, report: qualityReport });
 
-      res.json({
+      return res.json({
         success: true,
         report: qualityReport,
         message: `Quality check completed for issue "${issue.title}"`
       });
     } catch (error) {
       console.error('MCP quality check error:', error);
-      res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        error: 'Failed to run quality check' 
+        error: 'Failed to run quality check'
       });
     }
   });
@@ -298,32 +298,32 @@ export function mcpRoutes(context: any) {
         },
         stats: {
           total_issues: issues.length,
-          backlog_issues: issues.filter(i => i.status === 'backlog').length,
-          in_progress_issues: issues.filter(i => i.status === 'in_progress').length,
-          completed_issues: issues.filter(i => i.status === 'done').length,
+          backlog_issues: issues.filter((i: any) => i.status === 'backlog').length,
+          in_progress_issues: issues.filter((i: any) => i.status === 'in_progress').length,
+          completed_issues: issues.filter((i: any) => i.status === 'done').length,
           total_sprints: sprints.length,
-          active_sprints: sprints.filter(s => s.status === 'active').length,
-          total_story_points: issues.reduce((sum, i) => sum + (i.story_points || 0), 0)
+          active_sprints: sprints.filter((s: any) => s.status === 'active').length,
+          total_story_points: issues.reduce((sum: number, i: any) => sum + (i.story_points || 0), 0)
         },
-        recent_activity: await this.getRecentActivity(project_id)
+        recent_activity: await getRecentActivity(project_id)
       };
 
-      res.json({
+      return res.json({
         success: true,
         summary,
         message: `Project summary for "${project.name}"`
       });
     } catch (error) {
       console.error('MCP project summary error:', error);
-      res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        error: 'Failed to get project summary' 
+        error: 'Failed to get project summary'
       });
     }
   });
 
   // Helper method for recent activity (would be implemented in database service)
-  async function getRecentActivity(projectId: string) {
+  async function getRecentActivity(_projectId: string) {
     // This would query the activity_log table
     return [];
   }

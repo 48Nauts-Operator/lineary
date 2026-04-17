@@ -147,7 +147,7 @@ async function startServer() {
     });
     
     await apolloServer.start();
-    apolloServer.applyMiddleware({ app, path: '/api/graphql' });
+    apolloServer.applyMiddleware({ app: app as any, path: '/api/graphql' });
     
     // Start HTTP server
     httpServer.listen(PORT, () => {

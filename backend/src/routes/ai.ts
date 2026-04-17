@@ -35,13 +35,13 @@ export function aiRoutes(context: Context) {
         issue_id
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error('Code review failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Code review failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -67,13 +67,13 @@ export function aiRoutes(context: Context) {
         coverage_target
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error('Test generation failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Test generation failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -98,13 +98,13 @@ export function aiRoutes(context: Context) {
         existing_docs
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error('Documentation generation failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Documentation generation failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -134,13 +134,13 @@ export function aiRoutes(context: Context) {
         optimization_goals
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error('Prompt optimization failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Prompt optimization failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -178,13 +178,13 @@ export function aiRoutes(context: Context) {
         exclude_patterns
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error('Quality check failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Quality check failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -221,13 +221,13 @@ export function aiRoutes(context: Context) {
 
       const result = await codeQuality.autoFix(config, options);
 
-      res.json({
+      return res.json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error('Auto-fix failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Auto-fix failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -310,13 +310,13 @@ export function aiRoutes(context: Context) {
 
       const results = await ai.processIssuesWithAI(issues, operation, options);
 
-      res.json({
+      return res.json({
         success: true,
         data: results
       });
     } catch (error) {
       console.error('Batch AI processing failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Batch AI processing failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       });

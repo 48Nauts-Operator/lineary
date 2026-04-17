@@ -26,10 +26,10 @@ export function projectRoutes(context: any) {
       if (!project) {
         return res.status(404).json({ error: 'Project not found' });
       }
-      res.json(project);
+      return res.json(project);
     } catch (error) {
       console.error('Get project error:', error);
-      res.status(500).json({ error: 'Failed to fetch project' });
+      return res.status(500).json({ error: 'Failed to fetch project' });
     }
   });
 
@@ -52,10 +52,10 @@ export function projectRoutes(context: any) {
       await db.logActivity('project', project.id, 'created', { name });
       broadcast('project_created', project);
 
-      res.status(201).json(project);
+      return res.status(201).json(project);
     } catch (error) {
       console.error('Create project error:', error);
-      res.status(500).json({ error: 'Failed to create project' });
+      return res.status(500).json({ error: 'Failed to create project' });
     }
   });
 

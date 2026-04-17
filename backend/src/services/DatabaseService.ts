@@ -104,8 +104,8 @@ export class DatabaseService {
   }
 
   async updateProject(id: string, data: Partial<Project>): Promise<Project> {
-    const fields = [];
-    const values = [];
+    const fields: string[] = [];
+    const values: any[] = [];
     let paramCount = 1;
     
     Object.entries(data).forEach(([key, value]) => {
@@ -181,8 +181,8 @@ export class DatabaseService {
   }
 
   async updateIssue(id: string, data: Partial<Issue>): Promise<Issue> {
-    const fields = [];
-    const values = [];
+    const fields: string[] = [];
+    const values: any[] = [];
     let paramCount = 1;
     
     Object.entries(data).forEach(([key, value]) => {
