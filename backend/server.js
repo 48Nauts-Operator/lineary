@@ -7,6 +7,8 @@ const { Pool } = require('pg');
 const Redis = require('redis');
 const TokenEstimator = require('./services/tokenEstimator');
 const docsRouter = require('./routes/docs');
+const { requireAuth, userOwnsProject, projectIdForIssue, projectIdForSprint } = require('./middleware/requireAuth');
+const authRoutes = require('./routes/auth');
 const app = express();
 
 // Initialize services
@@ -31,27 +33,102 @@ const redis = Redis.createClient({
 app.use(cors());
 app.use(express.json());
 
-// Health check endpoints
+// Health check endpoints (must be before requireAuth to avoid 401 on probes)
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+  res.json({
+    status: 'healthy',
     service: 'lineary-backend',
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString()
   });
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+  res.json({
+    status: 'healthy',
     service: 'lineary-backend',
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString()
   });
+});
+
+// Auth: populates req.user for everything under /api/* except the bypass list
+// (webhooks, github webhook, oauth callbacks, /api/health).
+app.use(requireAuth(pool));
+
+// Auth routes (must come after requireAuth so req.user is set)
+app.use('/api', authRoutes(pool));
+
+// Ownership guards: match UUID-shaped path segments and reject access to
+// projects/issues/sprints the caller doesn't own. Covers every subpath in
+// one place rather than scattering checks across 30+ handlers.
+const UUID_RE = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+
+function ownershipGuard(extractProjectId, notFoundMessage) {
+  return async function (req, res, next) {
+    try {
+      if (!req.user) return next(); // bypass path slipped through; downstream will handle
+      const projectId = await extractProjectId(req);
+      if (!projectId) return res.status(404).json({ error: notFoundMessage });
+      const ok = await userOwnsProject(pool, req.user.id, projectId);
+      if (!ok) return res.status(404).json({ error: notFoundMessage });
+      next();
+    } catch (err) {
+      console.error('[ownershipGuard]', err);
+      res.status(500).json({ error: 'Auth check failed' });
+    }
+  };
+}
+
+const projectPathRe = new RegExp(`^/api/projects/(${UUID_RE})(/.*)?$`);
+app.use(async (req, res, next) => {
+  const m = req.path.match(projectPathRe);
+  if (!m) return next();
+  return ownershipGuard(async () => m[1], 'Project not found')(req, res, next);
+});
+
+const issuePathRe = new RegExp(`^/api/issues/(${UUID_RE})(/.*)?$`);
+app.use(async (req, res, next) => {
+  const m = req.path.match(issuePathRe);
+  if (!m) return next();
+  return ownershipGuard(async () => projectIdForIssue(pool, m[1]), 'Issue not found')(req, res, next);
+});
+
+const sprintPathRe = new RegExp(`^/api/sprints/(${UUID_RE})(/.*)?$`);
+app.use(async (req, res, next) => {
+  const m = req.path.match(sprintPathRe);
+  if (!m) return next();
+  return ownershipGuard(async () => projectIdForSprint(pool, m[1]), 'Sprint not found')(req, res, next);
+});
+
+const continuousSprintRe = new RegExp(`^/api/continuous/sprint/(${UUID_RE})(/.*)?$`);
+app.use(async (req, res, next) => {
+  const m = req.path.match(continuousSprintRe);
+  if (!m) return next();
+  return ownershipGuard(async () => projectIdForSprint(pool, m[1]), 'Sprint not found')(req, res, next);
+});
+
+// Project-id-in-path patterns inside mounted route files (analytics, versions, bugs, docs, ai).
+const projectScopedRes = [
+  new RegExp(`^/api/analytics/[^/]+/(${UUID_RE})$`),
+  new RegExp(`^/api/versions/(?:config|project|auto-generate|changelog)/(${UUID_RE})$`),
+  new RegExp(`^/api/bugs/(?:project|stats)/(${UUID_RE})$`),
+  new RegExp(`^/api/docs/(?:project|search)/(${UUID_RE})$`),
+  new RegExp(`^/api/ai/(?:insights|metrics)/(${UUID_RE})$`),
+];
+app.use(async (req, res, next) => {
+  for (const re of projectScopedRes) {
+    const m = req.path.match(re);
+    if (m) return ownershipGuard(async () => m[1], 'Not found')(req, res, next);
+  }
+  next();
 });
 
 // ============ PROJECTS API ============
 app.get('/api/projects', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM projects ORDER BY created_at DESC');
+    const result = await pool.query(
+      'SELECT * FROM projects WHERE owner_id = $1 OR owner_id IS NULL ORDER BY created_at DESC',
+      [req.user.id]
+    );
     res.json({ projects: result.rows });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -61,8 +138,11 @@ app.get('/api/projects', async (req, res) => {
 // Get project settings
 app.get('/api/projects/:id/settings', async (req, res) => {
   try {
+    if (!(await userOwnsProject(pool, req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
     const result = await pool.query(
-      `SELECT 
+      `SELECT
         id, name, github_repo, gitlab_repo, repo_type,
         webhook_secret, auto_create_issues, auto_sync_enabled,
         settings
@@ -91,13 +171,17 @@ app.get('/api/projects/:id/settings', async (req, res) => {
 
 // Update project settings
 app.put('/api/projects/:id/settings', async (req, res) => {
-  const { 
+  const {
     github_repo, gitlab_repo, repo_type, webhook_secret,
-    auto_create_issues, auto_sync_enabled 
+    auto_create_issues, auto_sync_enabled
   } = req.body;
-  
+
+  if (!(await userOwnsProject(pool, req.user.id, req.params.id))) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
     
@@ -152,7 +236,11 @@ app.put('/api/projects/:id/settings', async (req, res) => {
 // Test repository connection
 app.post('/api/projects/:id/test-repo-connection', async (req, res) => {
   const { repo_url, repo_type } = req.body;
-  
+
+  if (!(await userOwnsProject(pool, req.user.id, req.params.id))) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
   try {
     // Parse repository URL
     const urlPattern = repo_type === 'github' 
@@ -199,10 +287,10 @@ app.post('/api/projects', async (req, res) => {
   const { name, description, color, icon } = req.body;
   try {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    
+
     const result = await pool.query(
-      'INSERT INTO projects (name, description, slug, color, icon) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [name, description, slug, color || '#8B5CF6', icon || 'folder']
+      'INSERT INTO projects (name, description, slug, color, icon, owner_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [name, description, slug, color || '#8B5CF6', icon || 'folder', req.user.id]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -213,15 +301,18 @@ app.post('/api/projects', async (req, res) => {
 // Get project by ID
 app.get('/api/projects/:id', async (req, res) => {
   try {
+    if (!(await userOwnsProject(pool, req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
     const result = await pool.query(
       'SELECT * FROM projects WHERE id = $1',
       [req.params.id]
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -235,8 +326,11 @@ app.patch('/api/projects/:id', async (req, res) => {
     'name', 'description', 'color', 'icon', 'status',
     'github_repo', 'gitlab_repo', 'repo_type'
   ];
-  
+
   try {
+    if (!(await userOwnsProject(pool, req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
     const setClause = [];
     const values = [];
     let paramCount = 1;
@@ -299,20 +393,20 @@ app.get('/api/issues', async (req, res) => {
   const { project_id, sprint_id, parent_id } = req.query;
   try {
     let query = `
-      SELECT i.*, 
+      SELECT i.*,
         p.name as project_name,
         parent.title as parent_title,
         COUNT(sub.id) as subtask_count,
         array_agg(DISTINCT dep_issue.title) FILTER (WHERE dep_issue.id IS NOT NULL) as dependency_titles
       FROM issues i
-      LEFT JOIN projects p ON i.project_id = p.id
+      INNER JOIN projects p ON i.project_id = p.id
       LEFT JOIN issues parent ON i.parent_issue_id = parent.id
       LEFT JOIN issues sub ON sub.parent_issue_id = i.id
       LEFT JOIN issues dep_issue ON dep_issue.id = ANY(i.depends_on)
-      WHERE 1=1
+      WHERE (p.owner_id = $1 OR p.owner_id IS NULL)
     `;
-    const params = [];
-    let paramCount = 0;
+    const params = [req.user.id];
+    let paramCount = 1;
 
     if (project_id) {
       params.push(project_id);
@@ -337,12 +431,16 @@ app.get('/api/issues', async (req, res) => {
 });
 
 app.post('/api/issues', async (req, res) => {
-  const { 
-    title, description, project_id, priority, 
+  const {
+    title, description, project_id, priority,
     parent_issue_id, depends_on, start_date, end_date,
-    ai_prompt 
+    ai_prompt
   } = req.body;
-  
+
+  if (!(await userOwnsProject(pool, req.user.id, project_id))) {
+    return res.status(403).json({ error: 'Cannot create issue in this project' });
+  }
+
   try {
     // Generate AI prompt if not provided
     let finalPrompt = ai_prompt;
@@ -566,7 +664,7 @@ app.get('/api/sprints', async (req, res) => {
   const { project_id, status } = req.query;
   try {
     let query = `
-      SELECT s.*, 
+      SELECT s.*,
         COUNT(DISTINCT i.id) as issue_count,
         COUNT(DISTINCT CASE WHEN i.status = 'done' THEN i.id END) as completed_count,
         COUNT(DISTINCT CASE WHEN i.status IN ('in_progress', 'in_review') THEN i.id END) as in_progress_count,
@@ -574,11 +672,12 @@ app.get('/api/sprints', async (req, res) => {
         SUM(CASE WHEN i.status = 'done' THEN i.story_points ELSE 0 END) as completed_points,
         AVG(i.completion_scope) as avg_completion
       FROM sprints s
+      INNER JOIN projects p ON s.project_id = p.id
       LEFT JOIN issues i ON i.sprint_id = s.id
-      WHERE 1=1
+      WHERE (p.owner_id = $1 OR p.owner_id IS NULL)
     `;
-    const params = [];
-    let paramCount = 0;
+    const params = [req.user.id];
+    let paramCount = 1;
 
     if (project_id) {
       params.push(project_id);
@@ -610,6 +709,9 @@ app.get('/api/sprints', async (req, res) => {
 
 app.post('/api/sprints', async (req, res) => {
   const { name, project_id, start_date, end_date, duration_hours, issue_ids } = req.body;
+  if (!(await userOwnsProject(pool, req.user.id, project_id))) {
+    return res.status(403).json({ error: 'Cannot create sprint in this project' });
+  }
   try {
     // Calculate planned story points
     let plannedPoints = 0;
@@ -651,17 +753,22 @@ app.post('/api/sprints', async (req, res) => {
 app.get('/api/sprints/planning/issues', async (req, res) => {
   const { project_id } = req.query;
   try {
-    const query = `
+    const params = [req.user.id];
+    let query = `
       SELECT i.*, p.name as project_name
       FROM issues i
       JOIN projects p ON i.project_id = p.id
-      WHERE i.sprint_id IS NULL 
+      WHERE i.sprint_id IS NULL
       AND i.status NOT IN ('done', 'cancelled')
-      ${project_id ? 'AND i.project_id = $1' : ''}
-      ORDER BY i.priority, i.created_at
+      AND (p.owner_id = $1 OR p.owner_id IS NULL)
     `;
-    
-    const result = await pool.query(query, project_id ? [project_id] : []);
+    if (project_id) {
+      params.push(project_id);
+      query += ` AND i.project_id = $2`;
+    }
+    query += ' ORDER BY i.priority, i.created_at';
+
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });

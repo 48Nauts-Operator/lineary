@@ -8,9 +8,24 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import fetch from 'node-fetch';
+import rawFetch from 'node-fetch';
 
 const API_URL = process.env.LINEARY_API_URL || 'https://ai-linear.blockonauts.io/api';
+const API_KEY = process.env.LINEARY_API_KEY || '';
+if (!API_KEY) {
+  console.warn('[lineary-mcp] LINEARY_API_KEY not set — requests will be rejected. Generate a key in the Lineary web UI (Account tab).');
+}
+
+// Drop-in replacement for fetch that always attaches the API key and default JSON headers.
+const fetch = (url, options = {}) =>
+  rawFetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
+      ...(options.headers || {}),
+    },
+  });
 
 class LinearyMCPServer {
   constructor() {

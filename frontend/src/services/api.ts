@@ -160,18 +160,12 @@ const api = axios.create({
   },
 })
 
-// Request interceptor for auth
-api.interceptors.request.use((config) => {
-  // Add Betty API key for development
-  config.headers['X-API-Key'] = 'betty_dev_key_123'
-  
-  // Add auth token if available (for future use)
-  // const token = localStorage.getItem('auth_token')
-  // if (token) {
-  //   config.headers.Authorization = `Bearer ${token}`
-  // }
-  return config
-})
+// Request/response interceptors for this instance are wired centrally in
+// `src/auth/stack.ts` on the axios singleton, so every caller (including
+// legacy components using bare `axios` imports) gets the Stack Auth bearer.
+// This instance inherits via attaching the same interceptor explicitly.
+import { attachBearer } from '../auth/stack'
+api.interceptors.request.use(attachBearer)
 
 // Enhanced error logging function
 const logError = (error: any) => {
@@ -222,12 +216,19 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    // Auth failure → kick back to sign-in rather than leave the UI confused.
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      if (!window.location.pathname.startsWith('/handler/')) {
+        window.location.href = '/handler/sign-in'
+      }
+    }
+
     const errorInfo = logError(error)
-    
+
     // Enhance error with additional context
     error.bettyErrorInfo = errorInfo
     error.userMessage = getUserFriendlyMessage(error)
-    
+
     return Promise.reject(error)
   }
 )

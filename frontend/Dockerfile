@@ -21,6 +21,10 @@ COPY src/ ./src/
 COPY public/ ./public/
 COPY index.html ./
 
+# Stack Auth project ID baked into the Vite build
+ARG VITE_STACK_PROJECT_ID
+ENV VITE_STACK_PROJECT_ID=$VITE_STACK_PROJECT_ID
+
 # Build the application
 RUN npm run build
 

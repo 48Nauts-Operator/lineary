@@ -8,6 +8,7 @@ import IssuesPage from './pages/IssuesPage'
 import SprintsPage from './pages/SprintsPage'
 import DocsPage from './pages/DocsPage'
 import AnalyticsPage from './pages/AnalyticsPage'
+import { AccountPage } from './pages/Settings/Account'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
 import BugReportForm from './components/BugReportForm'
@@ -79,7 +80,7 @@ export interface Activity {
 const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [issues, setIssues] = useState<Issue[]>([])
-  const [activeTab, setActiveTab] = useState<'projects' | 'issues' | 'sprints' | 'docs' | 'analytics' | 'autopilot' | 'settings'>('projects')
+  const [activeTab, setActiveTab] = useState<'projects' | 'issues' | 'sprints' | 'docs' | 'analytics' | 'autopilot' | 'settings' | 'account'>('projects')
   const [loading, setLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showNewProjectForm, setShowNewProjectForm] = useState(false)
@@ -207,7 +208,7 @@ const App: React.FC = () => {
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="container mx-auto px-4">
           <nav className="flex space-x-8">
-            {(['projects', 'issues', 'sprints', 'docs', 'analytics', 'autopilot', 'settings'] as const).map(tab => (
+            {(['projects', 'issues', 'sprints', 'docs', 'analytics', 'autopilot', 'settings', 'account'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -431,6 +432,10 @@ const App: React.FC = () => {
 
         {activeTab === 'analytics' && (
           <AnalyticsPage selectedProject={selectedProject} projects={projects} />
+        )}
+
+        {activeTab === 'account' && (
+          <AccountPage />
         )}
 
         {activeTab === 'autopilot' && (
