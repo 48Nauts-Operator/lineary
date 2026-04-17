@@ -1,0 +1,36 @@
+{
+  "project_name": "lineary",
+  "deploy_remote": "deploy",
+  "deploy_repo": "git@github.com:21nauts/lineary.git",
+  "github_app_uuid": "yko440cs8cgk488cc4wgw4oc",
+  "resource_type": "docker-compose",
+  "compose_file": "docker-compose.prod.yml",
+  "branch_strategy": {
+    "local": "production",
+    "test": "main",
+    "production": "main"
+  },
+  "apps": {
+    "stack": {
+      "uuid": "",
+      "compose_file": "docker-compose.prod.yml",
+      "domain_prod": "lineary.ai",
+      "healthcheck_path": "/api/health"
+    }
+  },
+  "env_vars": {
+    "stack": {
+      "build_time": [
+        "STACK_PROJECT_ID"
+      ],
+      "runtime": [
+        "POSTGRES_PASSWORD",
+        "JWT_SECRET",
+        "STACK_PROJECT_ID",
+        "STACK_SECRET_SERVER_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY"
+      ]
+    }
+  }
+}
