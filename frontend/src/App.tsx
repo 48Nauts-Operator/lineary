@@ -15,6 +15,8 @@ import { ProjectModeDialog } from './components/ProjectModeDialog'
 import { GitHubSyncBadge } from './components/GitHubSyncBadge'
 import { ProjectPulse } from './components/ProjectPulse'
 import { ReviewPage } from './pages/ReviewPage'
+import { ProjectDashboard } from './pages/ProjectDashboard'
+import { AgentsPage } from './pages/AgentsPage'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
 import BugReportForm from './components/BugReportForm'
@@ -86,7 +88,7 @@ export interface Activity {
 const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [issues, setIssues] = useState<Issue[]>([])
-  const [activeTab, setActiveTab] = useState<'review' | 'projects' | 'issues' | 'sprints' | 'docs' | 'analytics' | 'autopilot' | 'settings' | 'account'>('review')
+  const [activeTab, setActiveTab] = useState<'review' | 'projects' | 'docs' | 'agents' | 'operations' | 'account'>('review')
   const [loading, setLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showNewProjectForm, setShowNewProjectForm] = useState(false)
@@ -220,7 +222,7 @@ const App: React.FC = () => {
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="container mx-auto px-4">
           <nav className="flex space-x-8">
-            {(['review', 'projects', 'issues', 'sprints', 'docs', 'analytics', 'autopilot', 'settings', 'account'] as const).map(tab => (
+            {(['review', 'projects', 'docs', 'agents', 'operations', 'account'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -241,9 +243,22 @@ const App: React.FC = () => {
       <main className="container mx-auto px-4 py-8">
         {activeTab === 'review' && <ReviewPage />}
 
-        {activeTab === 'projects' && (
+        {activeTab === 'agents' && <AgentsPage />}
+
+        {activeTab === 'projects' && selectedProject && (
+          <ProjectDashboard
+            project={selectedProject}
+            issues={filteredIssues}
+            onOpenIssue={(issue) => {
+              setSelectedIssue(issue)
+              setShowIssueDetail(true)
+            }}
+            onBack={() => setSelectedProject(null)}
+          />
+        )}
+
+        {activeTab === 'projects' && !selectedProject && (
           <div>
-            {selectedProject && <ProjectPulse projectId={selectedProject.id} />}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Projects</h2>
               <button
@@ -296,13 +311,9 @@ const App: React.FC = () => {
                   key={project.id}
                   onClick={() => {
                     setSelectedProject(project)
-                    setActiveTab('issues')
+                    setActiveTab('projects')
                   }}
-                  className={`bg-gray-800 rounded-lg p-6 border transition-all hover:shadow-lg relative group ${
-                    selectedProject?.id === project.id 
-                      ? 'border-purple-500 shadow-purple-500/20' 
-                      : 'border-gray-700 hover:border-purple-500'
-                  }`}
+                  className={`bg-gray-800 rounded-lg p-6 border transition-all hover:shadow-lg relative group border-gray-700 hover:border-purple-500`}
                 >
                   {/* Delete button */}
                   <button
@@ -323,7 +334,7 @@ const App: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation()
                       setSelectedProject(project)
-                      setActiveTab('settings')
+                      setActiveTab('projects')
                     }}
                     className="absolute top-2 right-10 opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-purple-600/20 rounded-lg"
                     title="Project settings"
@@ -337,7 +348,7 @@ const App: React.FC = () => {
                   <div
                     onClick={() => {
                       setSelectedProject(project)
-                      setActiveTab('issues')
+                      setActiveTab('projects')
                     }}
                     className="cursor-pointer"
                   >
@@ -354,121 +365,16 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'issues' && (
-          <IssuesPage 
-            selectedProject={selectedProject} 
-            projects={projects}
-          />
-        )}
-
-        {activeTab === 'sprints' && (
-          <SprintsPage selectedProject={selectedProject} projects={projects} />
-        )}
-
         {activeTab === 'docs' && (
           <DocsPage selectedProject={selectedProject} projects={projects} />
         )}
 
-        {/* Settings Tab */}
-        {activeTab === 'settings' && selectedProject && (
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Project Settings</h2>
-              <p className="text-gray-400">Configure {selectedProject.name} settings and integrations</p>
-            </div>
-            
-            {/* Project Details */}
-            <div className="bg-gray-800 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4">Project Details</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Project Name</label>
-                  <input
-                    type="text"
-                    value={selectedProject.name}
-                    className="w-full bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
-                  <textarea
-                    value={selectedProject.description || ''}
-                    className="w-full bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                    rows={3}
-                    readOnly
-                  />
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Project Color</label>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-10 h-10 rounded-lg border border-gray-600" style={{ backgroundColor: selectedProject.color }}></div>
-                      <span className="text-gray-400">{selectedProject.color}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Slug</label>
-                    <span className="text-gray-300">/{selectedProject.slug}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Integrations Section */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4">Integrations</h3>
-              <p className="text-sm text-gray-400 mb-6">Connect your favorite tools to streamline your workflow</p>
-              
-              <IntegrationCards 
-                projectId={selectedProject.id}
-                currentIntegrations={{
-                  github: false,
-                  gitlab: false,
-                  bitbucket: false,
-                  slack: false
-                }}
-              />
-            </div>
-            
-            {/* Danger Zone */}
-            <div className="bg-red-900/20 border border-red-800 rounded-lg p-6 mt-6">
-              <h3 className="text-lg font-semibold text-red-400 mb-4">Danger Zone</h3>
-              <p className="text-sm text-gray-400 mb-4">Once you delete a project, there is no going back. Please be certain.</p>
-              <button 
-                onClick={() => deleteProject(selectedProject.id)}
-                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                Delete This Project
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'analytics' && (
+        {activeTab === 'operations' && (
           <AnalyticsPage selectedProject={selectedProject} projects={projects} />
         )}
 
         {activeTab === 'account' && (
           <AccountPage />
-        )}
-
-        {activeTab === 'autopilot' && (
-          <AutopilotDashboard />
-        )}
-        
-        {/* New Feature: Development Timeline */}
-        {activeTab === 'issues' && selectedProject && (
-          <div className="mt-6">
-            <DevelopmentTimeline projectId={selectedProject.id} />
-          </div>
-        )}
-        
-        {/* New Feature: Version Manager */}
-        {activeTab === 'sprints' && selectedProject && (
-          <div className="mt-6">
-            <VersionManager projectId={selectedProject.id} />
-          </div>
         )}
       </main>
       
