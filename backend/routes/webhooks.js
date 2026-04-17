@@ -4,9 +4,86 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const { upsertIssueFromGitHub, upsertCommentFromGitHub } = require('../lib/github/sync');
+
+function verifyGithubAppSignature(rawBody, signatureHeader) {
+  const secret = process.env.GITHUB_WEBHOOK_SECRET;
+  if (!secret) return false;
+  if (!signatureHeader) return false;
+  const expected =
+    'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signatureHeader), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
+
+async function projectIdForInstallation(pool, installationId) {
+  if (!installationId) return null;
+  const { rows } = await pool.query(
+    `SELECT project_id FROM project_github_installations WHERE installation_id = $1 LIMIT 1`,
+    [installationId]
+  );
+  return rows[0]?.project_id || null;
+}
 
 module.exports = (pool) => {
-  // GitHub webhook endpoint
+  // GitHub App webhook — single URL, installation routes us to a project.
+  // Bypass auth on this path (see middleware/requireAuth.js BYPASS_PATHS).
+  router.post('/webhooks/github', async (req, res) => {
+    const event = req.headers['x-github-event'];
+    const deliveryId = req.headers['x-github-delivery'];
+    const signature = req.headers['x-hub-signature-256'];
+
+    // req.rawBody is set by the express.json verify hook in server.js
+    const rawBody = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));
+    if (!verifyGithubAppSignature(rawBody, signature)) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    const payload = req.body;
+    const installationId = payload.installation?.id;
+    const projectId = await projectIdForInstallation(pool, installationId);
+    if (!projectId) {
+      return res.status(202).json({ ignored: 'unknown installation', installationId });
+    }
+
+    await pool.query(
+      `INSERT INTO git_webhook_events (project_id, provider, event_type, event_id, payload)
+       VALUES ($1, 'github', $2, $3, $4)
+       ON CONFLICT (provider, event_id) DO NOTHING`,
+      [projectId, event, deliveryId || crypto.randomBytes(16).toString('hex'), payload]
+    );
+
+    try {
+      switch (event) {
+        case 'push':
+          await processGitHubPush(pool, projectId, payload);
+          break;
+        case 'pull_request':
+          await processGitHubPullRequest(pool, projectId, payload);
+          break;
+        case 'issues':
+          await processGitHubAppIssueEvent(pool, projectId, payload);
+          break;
+        case 'issue_comment':
+          await processGitHubAppIssueComment(pool, projectId, payload);
+          break;
+        default:
+          // Ignore other events for now; they're logged in git_webhook_events.
+          break;
+      }
+    } catch (err) {
+      console.error('[webhooks/github] handler error:', err);
+      // Fall through to 200 so GitHub doesn't retry — the event is persisted.
+    }
+
+    return res.json({ received: true });
+  });
+
+  // Legacy per-project webhook endpoint (used by the OAuth-token flow in
+  // oauth.js — keep for backward compat; new GitHub App uses /webhooks/github).
   router.post('/webhooks/github/:projectId', async (req, res) => {
     const { projectId } = req.params;
     const signature = req.headers['x-hub-signature-256'];
@@ -113,6 +190,39 @@ module.exports = (pool) => {
 
   return router;
 };
+
+// ────────────────────────────────────────────────────────────────
+// GitHub App handlers — idempotent, loop-safe.
+// Reuse the sync-engine upserts so the same shape is produced whether the
+// write comes from the webhook, the initial-sync pass, or the poller.
+// ────────────────────────────────────────────────────────────────
+
+async function processGitHubAppIssueEvent(pool, projectId, payload) {
+  const issue = payload.issue;
+  if (!issue) return;
+  // payload.action: opened | edited | closed | reopened | labeled | unlabeled | ...
+  await upsertIssueFromGitHub(pool, projectId, issue);
+}
+
+async function processGitHubAppIssueComment(pool, projectId, payload) {
+  const { comment, issue } = payload;
+  if (!comment || !issue) return;
+  if (payload.action === 'deleted') {
+    await pool.query(`DELETE FROM issue_comments WHERE github_comment_id = $1`, [comment.id]);
+    return;
+  }
+  // Resolve Lineary issue id via github_issue_id (set by upsertIssueFromGitHub).
+  const { rows } = await pool.query(
+    `SELECT id FROM issues WHERE project_id = $1 AND github_issue_id = $2 LIMIT 1`,
+    [projectId, issue.id]
+  );
+  let issueId = rows[0]?.id;
+  if (!issueId) {
+    // First time we see this issue — upsert it too.
+    issueId = await upsertIssueFromGitHub(pool, projectId, issue);
+  }
+  await upsertCommentFromGitHub(pool, issueId, comment);
+}
 
 // Process GitHub push events
 async function processGitHubPush(pool, projectId, payload) {

@@ -9,6 +9,8 @@ import SprintsPage from './pages/SprintsPage'
 import DocsPage from './pages/DocsPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import { AccountPage } from './pages/Settings/Account'
+import { ProjectModeDialog } from './components/ProjectModeDialog'
+import { GitHubSyncBadge } from './components/GitHubSyncBadge'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
 import BugReportForm from './components/BugReportForm'
@@ -28,6 +30,7 @@ export interface Project {
   color: string
   icon: string
   created_at: string
+  mode?: 'mcp_only' | 'github'
 }
 
 export interface Issue {
@@ -86,6 +89,7 @@ const App: React.FC = () => {
   const [newProject, setNewProject] = useState({ name: '', description: '', color: '#8B5CF6' })
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null)
   const [showIssueDetail, setShowIssueDetail] = useState(false)
+  const [modeDialogFor, setModeDialogFor] = useState<Project | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -125,6 +129,8 @@ const App: React.FC = () => {
       setSelectedProject(response.data)
       setShowNewProjectForm(false)
       setNewProject({ name: '', description: '', color: '#8B5CF6' })
+      // Prompt the user to pick project mode immediately after creation.
+      setModeDialogFor(response.data)
     } catch (error) {
       console.error('Error creating project:', error)
     }
@@ -194,6 +200,9 @@ const App: React.FC = () => {
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedProject.color }}></div>
                   <span className="text-sm font-medium">{selectedProject.name}</span>
                 </div>
+              )}
+              {selectedProject && selectedProject.mode === 'github' && (
+                <GitHubSyncBadge projectId={selectedProject.id} />
               )}
               <span className="text-sm text-gray-400">
                 {projects.length} Projects • {filteredIssues.length} Issues
@@ -474,6 +483,23 @@ const App: React.FC = () => {
             fetchData()
           }}
           projects={projects}
+        />
+      )}
+
+      {modeDialogFor && (
+        <ProjectModeDialog
+          projectId={modeDialogFor.id}
+          projectName={modeDialogFor.name}
+          onClose={() => setModeDialogFor(null)}
+          onSelected={(mode) => {
+            // Reflect chosen mode in local state without a full refetch.
+            setProjects((prev) =>
+              prev.map((p) => (p.id === modeDialogFor.id ? { ...p, mode } : p))
+            )
+            setSelectedProject((prev) =>
+              prev && prev.id === modeDialogFor.id ? { ...prev, mode } : prev
+            )
+          }}
         />
       )}
     </div>
