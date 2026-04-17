@@ -160,16 +160,21 @@ const api = axios.create({
   },
 })
 
-// Request interceptor for auth
-api.interceptors.request.use((config) => {
-  // Add Betty API key for development
-  config.headers['X-API-Key'] = 'betty_dev_key_123'
-  
-  // Add auth token if available (for future use)
-  // const token = localStorage.getItem('auth_token')
-  // if (token) {
-  //   config.headers.Authorization = `Bearer ${token}`
-  // }
+// Request interceptor for auth — attach Stack Auth bearer token on every API call.
+import { stackApp } from '../auth/stack'
+
+api.interceptors.request.use(async (config) => {
+  try {
+    const user = await stackApp.getUser()
+    if (user) {
+      const { accessToken } = await user.getAuthJson()
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`
+      }
+    }
+  } catch {
+    // No session yet — requests to protected endpoints will 401 and trigger redirect.
+  }
   return config
 })
 
@@ -222,12 +227,19 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    // Auth failure → kick back to sign-in rather than leave the UI confused.
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      if (!window.location.pathname.startsWith('/handler/')) {
+        window.location.href = '/handler/sign-in'
+      }
+    }
+
     const errorInfo = logError(error)
-    
+
     // Enhance error with additional context
     error.bettyErrorInfo = errorInfo
     error.userMessage = getUserFriendlyMessage(error)
-    
+
     return Promise.reject(error)
   }
 )
