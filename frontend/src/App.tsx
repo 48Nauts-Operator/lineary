@@ -14,6 +14,7 @@ import { AccountPage } from './pages/Settings/Account'
 import { ProjectModeDialog } from './components/ProjectModeDialog'
 import { GitHubSyncBadge } from './components/GitHubSyncBadge'
 import { ProjectPulse } from './components/ProjectPulse'
+import { ReviewPage } from './pages/ReviewPage'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
 import BugReportForm from './components/BugReportForm'
@@ -85,7 +86,7 @@ export interface Activity {
 const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [issues, setIssues] = useState<Issue[]>([])
-  const [activeTab, setActiveTab] = useState<'projects' | 'issues' | 'sprints' | 'docs' | 'analytics' | 'autopilot' | 'settings' | 'account'>('projects')
+  const [activeTab, setActiveTab] = useState<'review' | 'projects' | 'issues' | 'sprints' | 'docs' | 'analytics' | 'autopilot' | 'settings' | 'account'>('review')
   const [loading, setLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showNewProjectForm, setShowNewProjectForm] = useState(false)
@@ -219,7 +220,7 @@ const App: React.FC = () => {
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="container mx-auto px-4">
           <nav className="flex space-x-8">
-            {(['projects', 'issues', 'sprints', 'docs', 'analytics', 'autopilot', 'settings', 'account'] as const).map(tab => (
+            {(['review', 'projects', 'issues', 'sprints', 'docs', 'analytics', 'autopilot', 'settings', 'account'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -238,6 +239,8 @@ const App: React.FC = () => {
 
       {/* Content */}
       <main className="container mx-auto px-4 py-8">
+        {activeTab === 'review' && <ReviewPage />}
+
         {activeTab === 'projects' && (
           <div>
             {selectedProject && <ProjectPulse projectId={selectedProject.id} />}

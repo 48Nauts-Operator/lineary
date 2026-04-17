@@ -10,6 +10,7 @@ const docsRouter = require('./routes/docs');
 const { requireAuth, userOwnsProject, projectIdForIssue, projectIdForSprint } = require('./middleware/requireAuth');
 const authRoutes = require('./routes/auth');
 const githubInstallRoutes = require('./routes/github/install');
+const agentsRoutes = require('./routes/agents');
 const { enqueue: ghOutboxEnqueue } = require('./lib/github/outbox');
 
 // Helper: only enqueue reverse-sync rows when the project is linked to a GitHub repo.
@@ -75,6 +76,9 @@ app.use('/api', authRoutes(pool));
 
 // GitHub install flow (install-callback is on the bypass list; others require auth)
 app.use('/api', githubInstallRoutes(pool));
+
+// Agents, proposals, and presence for the AI-first Review surface.
+app.use('/api', agentsRoutes(pool));
 
 // Ownership guards: match UUID-shaped path segments and reject access to
 // projects/issues/sprints the caller doesn't own. Covers every subpath in
