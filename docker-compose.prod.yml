@@ -71,9 +71,11 @@ services:
         VITE_STACK_PROJECT_ID: ${STACK_PROJECT_ID}
     depends_on:
       - backend
-    expose:
+    # Coolify routes its generated FQDN (+ any custom domain you set in the UI)
+    # to this service on the first exposed port. Don't add Traefik labels here —
+    # Coolify injects its own based on the Application's FQDN setting.
+    ports:
       - "80"
-    # BusyBox wget is present in nginx:alpine.
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
       interval: 30s
@@ -81,14 +83,6 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
-    # Traefik labels for Coolify — route lineary.ai to this container on port 80.
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.lineary.rule=Host(`lineary.ai`) || Host(`www.lineary.ai`)"
-      - "traefik.http.routers.lineary.entrypoints=https"
-      - "traefik.http.routers.lineary.tls=true"
-      - "traefik.http.routers.lineary.tls.certresolver=letsencrypt"
-      - "traefik.http.services.lineary.loadbalancer.server.port=80"
 
 volumes:
   postgres_data:
