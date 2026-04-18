@@ -71,9 +71,10 @@ services:
         VITE_STACK_PROJECT_ID: ${STACK_PROJECT_ID}
     depends_on:
       - backend
-    # Coolify routes its generated FQDN (+ any custom domain you set in the UI)
-    # to this service on the first exposed port. Don't add Traefik labels here —
-    # Coolify injects its own based on the Application's FQDN setting.
+    # Coolify "Magic Environment Variables" — SERVICE_FQDN_<SERVICE>_<PORT>
+    # tells Coolify's proxy which service to route the assigned FQDN to.
+    environment:
+      - SERVICE_FQDN_FRONTEND_80
     ports:
       - "80"
     healthcheck:
