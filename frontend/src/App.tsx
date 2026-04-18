@@ -18,6 +18,7 @@ import { ReviewPage } from './pages/ReviewPage'
 import { ProjectDashboard } from './pages/ProjectDashboard'
 import { AgentsPage } from './pages/AgentsPage'
 import { OperationsPage } from './pages/OperationsPage'
+import { WelcomePage } from './pages/WelcomePage'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
 import BugReportForm from './components/BugReportForm'
@@ -97,8 +98,24 @@ const App: React.FC = () => {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null)
   const [showIssueDetail, setShowIssueDetail] = useState(false)
   const [modeDialogFor, setModeDialogFor] = useState<Project | null>(null)
+  const [welcomeKit, setWelcomeKit] = useState<{
+    user: { name: string; email: string }
+    project: { id: string; name: string; slug: string }
+    api_key: { raw: string; name: string; prefix: string }
+  } | null>(null)
+  const [bootstrapChecked, setBootstrapChecked] = useState(false)
 
   useEffect(() => {
+    // First-login onboarding. Bootstrap is idempotent; new users get the
+    // welcome kit, returning users get a quick { is_new_user: false }.
+    axios
+      .post(`${API_URL}/auth/bootstrap`)
+      .then((r) => {
+        if (r.data?.is_new_user) setWelcomeKit(r.data)
+      })
+      .catch(() => {})
+      .finally(() => setBootstrapChecked(true))
+
     fetchData()
   }, [])
 
@@ -178,7 +195,7 @@ const App: React.FC = () => {
     ? issues.filter(issue => issue.project_id === selectedProject.id)
     : issues
 
-  if (loading) {
+  if (loading || !bootstrapChecked) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -186,6 +203,20 @@ const App: React.FC = () => {
           <h2 className="text-xl font-semibold text-white mt-4">Loading Lineary...</h2>
         </div>
       </div>
+    )
+  }
+
+  // First-login welcome — the user hasn't onboarded yet. Show starter project,
+  // API key, and Claude Desktop config, then let them "Open Lineary".
+  if (welcomeKit) {
+    return (
+      <WelcomePage
+        kit={welcomeKit}
+        onDone={() => {
+          setWelcomeKit(null)
+          fetchData()
+        }}
+      />
     )
   }
 
