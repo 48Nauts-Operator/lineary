@@ -2,6 +2,7 @@
 // agent presence for the live strip.
 
 const express = require('express');
+const { maybeAutoApprove, KNOWN_RULES } = require('../lib/autonomy');
 
 module.exports = function agentsRoutes(pool) {
   const router = express.Router();
@@ -118,10 +119,84 @@ module.exports = function agentsRoutes(pool) {
           autoApproveAt,
         ]
       );
-      res.status(201).json(rows[0]);
+      const created = rows[0];
+      const autoRule = await maybeAutoApprove(pool, created);
+      res.status(201).json({ ...created, auto_approved_by: autoRule });
     } catch (err) {
       console.error('create proposal:', err);
       res.status(500).json({ error: 'Failed to create proposal' });
+    }
+  });
+
+  // ───── Autonomy rules ─────────────────────────────────────────────────
+
+  router.get('/projects/:id/autonomy', async (req, res) => {
+    try {
+      if (!(await ownsProject(req.user.id, req.params.id))) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+      const { rows } = await pool.query(
+        `SELECT rule_key, enabled, config FROM autonomy_rules WHERE project_id = $1`,
+        [req.params.id]
+      );
+      const byKey = Object.fromEntries(rows.map((r) => [r.rule_key, r]));
+      const full = KNOWN_RULES.map((k) => ({
+        key: k.key,
+        label: k.label,
+        description: k.description,
+        default_config: k.default_config,
+        enabled: byKey[k.key]?.enabled ?? false,
+        config: byKey[k.key]?.config ?? k.default_config,
+      }));
+      res.json({ rules: full });
+    } catch (err) {
+      console.error('autonomy get:', err);
+      res.status(500).json({ error: 'Failed to load rules' });
+    }
+  });
+
+  router.put('/projects/:id/autonomy/:rule_key', async (req, res) => {
+    const { id: projectId, rule_key } = req.params;
+    const { enabled, config } = req.body || {};
+    if (!KNOWN_RULES.find((k) => k.key === rule_key)) {
+      return res.status(400).json({ error: 'Unknown rule_key' });
+    }
+    if (!(await ownsProject(req.user.id, projectId))) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO autonomy_rules (project_id, rule_key, enabled, config, updated_at)
+         VALUES ($1, $2, COALESCE($3, false), COALESCE($4::jsonb, '{}'::jsonb), NOW())
+         ON CONFLICT (project_id, rule_key) DO UPDATE SET
+           enabled = EXCLUDED.enabled,
+           config = EXCLUDED.config,
+           updated_at = NOW()
+         RETURNING *`,
+        [projectId, rule_key, enabled === true, config ? JSON.stringify(config) : null]
+      );
+      res.json(rows[0]);
+    } catch (err) {
+      console.error('autonomy put:', err);
+      res.status(500).json({ error: 'Failed to save rule' });
+    }
+  });
+
+  router.get('/projects/:id/autonomy/audit', async (req, res) => {
+    try {
+      if (!(await ownsProject(req.user.id, req.params.id))) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+      const { rows } = await pool.query(
+        `SELECT id, rule_key, agent_slug, kind, created_at
+         FROM autonomy_audit WHERE project_id = $1
+         ORDER BY created_at DESC LIMIT 50`,
+        [req.params.id]
+      );
+      res.json({ audit: rows });
+    } catch (err) {
+      console.error('autonomy audit:', err);
+      res.status(500).json({ error: 'Failed to load audit log' });
     }
   });
 

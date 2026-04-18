@@ -11,6 +11,7 @@ const { requireAuth, userOwnsProject, projectIdForIssue, projectIdForSprint } = 
 const authRoutes = require('./routes/auth');
 const githubInstallRoutes = require('./routes/github/install');
 const agentsRoutes = require('./routes/agents');
+const releasesRoutes = require('./routes/releases');
 const { enqueue: ghOutboxEnqueue } = require('./lib/github/outbox');
 
 // Helper: only enqueue reverse-sync rows when the project is linked to a GitHub repo.
@@ -79,6 +80,9 @@ app.use('/api', githubInstallRoutes(pool));
 
 // Agents, proposals, and presence for the AI-first Review surface.
 app.use('/api', agentsRoutes(pool));
+
+// Releases — bundles of merged work as changelog entries.
+app.use('/api', releasesRoutes(pool));
 
 // Ownership guards: match UUID-shaped path segments and reject access to
 // projects/issues/sprints the caller doesn't own. Covers every subpath in

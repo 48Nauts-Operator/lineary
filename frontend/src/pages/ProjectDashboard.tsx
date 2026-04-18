@@ -170,6 +170,226 @@ export function ProjectDashboard({ project, issues, onOpenIssue, onBack }: Props
           filtered.map((issue) => <IssueRow key={issue.id} issue={issue} onClick={() => onOpenIssue(issue)} />)
         )}
       </div>
+
+      <ReleasesPanel projectId={project.id} />
+      <AutonomyPanel projectId={project.id} />
+    </div>
+  );
+}
+
+interface Release {
+  id: string;
+  name: string;
+  tag: string | null;
+  status: 'draft' | 'published';
+  body: string | null;
+  pr_numbers: number[] | null;
+  published_at: string | null;
+  created_at: string;
+}
+
+function ReleasesPanel({ projectId }: { projectId: string }) {
+  const [releases, setReleases] = useState<Release[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await axios.get(`${API_URL}/projects/${projectId}/releases`);
+      setReleases(r.data.releases || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  const autoDraft = async () => {
+    setDrafting(true);
+    try {
+      const r = await axios.post(`${API_URL}/projects/${projectId}/releases/auto-draft`);
+      if (r.data.release) {
+        setReleases((prev) => [r.data.release, ...prev]);
+        setExpanded(r.data.release.id);
+      }
+    } finally {
+      setDrafting(false);
+    }
+  };
+
+  const publish = async (id: string) => {
+    try {
+      const r = await axios.post(`${API_URL}/projects/${projectId}/releases/${id}/publish`);
+      setReleases((prev) => prev.map((x) => (x.id === id ? r.data : x)));
+    } catch {
+      // noop
+    }
+  };
+
+  return (
+    <div className="mt-12 border-t border-gray-800 pt-8">
+      <div className="mb-4 flex items-baseline justify-between">
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-[16px] font-semibold text-gray-200">Releases</h2>
+          <span className="text-[12px] text-gray-500">
+            Bundles of merged work. Auto-drafted from merged PRs; edit, then publish.
+          </span>
+        </div>
+        <button
+          onClick={autoDraft}
+          disabled={drafting}
+          className="rounded-md border border-gray-800 px-3 py-1.5 text-[12px] font-medium text-gray-300 hover:bg-gray-800 disabled:opacity-50"
+        >
+          {drafting ? 'Drafting…' : 'Auto-draft from recent merges'}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="py-6 text-center text-sm text-gray-500">Loading…</div>
+      ) : releases.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-gray-800 bg-[#0F1117] p-6 text-center text-[12px] text-gray-500">
+          No releases yet. Click Auto-draft when you want to stamp a slice of merged work as a release.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {releases.map((rel) => (
+            <div key={rel.id} className="rounded-lg border border-gray-800 bg-[#12141B]">
+              <button
+                onClick={() => setExpanded(expanded === rel.id ? null : rel.id)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left"
+              >
+                <span
+                  className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                    rel.status === 'published'
+                      ? 'border-[#2F4A2F] bg-[#1F2E1F] text-[#7FD38E]'
+                      : 'border-gray-800 bg-[#1A1D28] text-gray-400'
+                  }`}
+                >
+                  {rel.status}
+                </span>
+                <span className="text-[13px] font-medium text-gray-200">{rel.name}</span>
+                {rel.tag ? <span className="font-mono text-[12px] text-[#9B8CFF]">{rel.tag}</span> : null}
+                <span className="ml-auto flex items-center gap-3 text-[11px] text-gray-500">
+                  {rel.pr_numbers && rel.pr_numbers.length > 0 ? (
+                    <span>
+                      {rel.pr_numbers.length} PR{rel.pr_numbers.length === 1 ? '' : 's'}
+                    </span>
+                  ) : null}
+                  <span className="font-mono">
+                    {rel.published_at
+                      ? `published ${new Date(rel.published_at).toLocaleDateString()}`
+                      : `drafted ${new Date(rel.created_at).toLocaleDateString()}`}
+                  </span>
+                </span>
+              </button>
+              {expanded === rel.id ? (
+                <div className="border-t border-gray-800 p-4">
+                  <pre className="whitespace-pre-wrap text-[13px] leading-[20px] text-gray-300">{rel.body || ''}</pre>
+                  {rel.status === 'draft' ? (
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        onClick={() => publish(rel.id)}
+                        className="rounded-md border border-[#2F4A2F] bg-[#1F2E1F] px-3 py-1.5 text-[12px] font-semibold text-[#8AD896]"
+                      >
+                        Publish release
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface AutonomyRule {
+  key: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  default_config: Record<string, unknown>;
+}
+
+function AutonomyPanel({ projectId }: { projectId: string }) {
+  const [rules, setRules] = useState<AutonomyRule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    axios
+      .get(`${API_URL}/projects/${projectId}/autonomy`)
+      .then((r) => alive && setRules(r.data.rules || []))
+      .catch(() => alive && setRules([]))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [projectId]);
+
+  const toggle = async (rule: AutonomyRule) => {
+    const next = !rule.enabled;
+    setSaving(rule.key);
+    try {
+      await axios.put(`${API_URL}/projects/${projectId}/autonomy/${rule.key}`, {
+        enabled: next,
+        config: rule.config ?? rule.default_config,
+      });
+      setRules((prev) => prev.map((r) => (r.key === rule.key ? { ...r, enabled: next } : r)));
+    } catch {
+      // noop; UI will stay as-is
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="mt-12 border-t border-gray-800 pt-8">
+      <div className="mb-4 flex items-baseline gap-3">
+        <h2 className="text-[16px] font-semibold text-gray-200">Autonomy</h2>
+        <span className="text-[12px] text-gray-500">
+          When a rule matches, the proposal is applied immediately without a human click.
+        </span>
+      </div>
+      <div className="flex flex-col gap-2">
+        {rules.map((rule) => (
+          <div
+            key={rule.key}
+            className="flex items-center gap-4 rounded-lg border border-gray-800 bg-[#12141B] px-4 py-3"
+          >
+            <div className="flex flex-1 flex-col gap-0.5">
+              <span className="text-[13px] font-medium text-gray-200">{rule.label}</span>
+              <span className="text-[12px] text-gray-500">{rule.description}</span>
+            </div>
+            <button
+              onClick={() => toggle(rule)}
+              disabled={saving === rule.key}
+              className={`flex h-[22px] w-[38px] flex-shrink-0 items-center rounded-full p-[2px] transition-colors ${
+                rule.enabled ? 'bg-[#34D399]/70' : 'bg-gray-800'
+              } ${saving === rule.key ? 'opacity-60' : ''}`}
+              aria-pressed={rule.enabled}
+              aria-label={rule.label}
+            >
+              <span
+                className={`h-[18px] w-[18px] rounded-full bg-gray-50 transition-transform ${
+                  rule.enabled ? 'translate-x-[16px]' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
