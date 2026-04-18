@@ -3,8 +3,10 @@ const { verifyKey } = require('../lib/apiKeys');
 
 const BYPASS_PATHS = [
   /^\/api\/health$/,
-  /^\/api\/webhooks\/(github|gitlab)\//,
-  /^\/api\/github\/webhook$/,
+  /^\/api\/webhooks\/github$/,                // GitHub App webhook (App HMAC verified in route)
+  /^\/api\/webhooks\/(github|gitlab)\//,       // Legacy per-project webhook paths
+  /^\/api\/github\/webhook$/,                 // Archived route path — kept in bypass for any stragglers
+  /^\/api\/github\/install-callback$/,         // GitHub redirects here; identity via signed state JWT
   /^\/api\/auth\/oauth\//,
 ];
 

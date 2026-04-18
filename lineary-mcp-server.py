@@ -197,6 +197,64 @@ class LinearyMCPServer:
                         },
                         'required': ['project_id', 'feature_description']
                     }
+                },
+                {
+                    'name': 'propose_action',
+                    'description': (
+                        'Propose an action on a Lineary project that needs human review. '
+                        'Use this instead of acting directly when blast_radius is medium/high, '
+                        'when confidence is uncertain, or when you need a human decision between '
+                        'equally reasonable paths. Emits a proposal into the Review queue.'
+                    ),
+                    'inputSchema': {
+                        'type': 'object',
+                        'properties': {
+                            'project_id': {'type': 'string', 'description': 'Project ID'},
+                            'agent_slug': {'type': 'string', 'description': 'Your agent slug, e.g. agent-backend'},
+                            'kind': {
+                                'type': 'string',
+                                'enum': ['merge_pr', 'close_issue', 'split_issue', 'ask_question', 'create_issue', 'update_issue'],
+                                'description': 'What you want to do'
+                            },
+                            'target_issue_id': {'type': 'string', 'description': 'Lineary issue UUID the proposal targets (optional)'},
+                            'target_label': {'type': 'string', 'description': 'Human-readable target label when not a Lineary issue'},
+                            'payload': {
+                                'type': 'object',
+                                'description': (
+                                    'Kind-specific data. Examples: merge_pr → {pr_number, title, diff_stats}; '
+                                    'split_issue → {sub_issues: [{title, hint}]}; '
+                                    'ask_question → {options: ["option A", "option B"]}'
+                                )
+                            },
+                            'reasoning': {'type': 'string', 'description': 'One-paragraph explanation of why this action, for the human reviewer'},
+                            'confidence': {'type': 'number', 'minimum': 0, 'maximum': 1, 'description': 'Your 0..1 confidence'},
+                            'blast_radius': {'type': 'string', 'enum': ['low', 'medium', 'high'], 'default': 'low'},
+                            'urgency': {'type': 'string', 'enum': ['urgent', 'normal', 'low'], 'default': 'normal'},
+                            'auto_approve_seconds': {
+                                'type': 'number',
+                                'description': 'If set, the proposal auto-approves after this many seconds unless a human intervenes. Use for planning-level low-risk actions.'
+                            }
+                        },
+                        'required': ['project_id', 'kind']
+                    }
+                },
+                {
+                    'name': 'agent_heartbeat',
+                    'description': (
+                        'Send a presence heartbeat so the human sees what you are doing in the Live strip. '
+                        'Call this when you start a task, change state, or every 30-60 seconds during long work.'
+                    ),
+                    'inputSchema': {
+                        'type': 'object',
+                        'properties': {
+                            'agent_slug': {'type': 'string', 'description': 'Your agent slug'},
+                            'project_id': {'type': 'string'},
+                            'status': {'type': 'string', 'enum': ['active', 'idle', 'waiting', 'finished'], 'default': 'active'},
+                            'current_task': {'type': 'string', 'description': 'Verb phrase, e.g. "writing diff for"'},
+                            'current_target': {'type': 'string', 'description': 'Target label, e.g. "LIN-145" or "#58"'}
+                        },
+                        'required': ['agent_slug']
+                    }
                 }
             ]
         }
@@ -217,6 +275,8 @@ class LinearyMCPServer:
             'create_sprint': self.create_sprint,
             'add_to_sprint': self.add_to_sprint,
             'generate_ai_tasks': self.generate_ai_tasks,
+            'propose_action': self.propose_action,
+            'agent_heartbeat': self.agent_heartbeat,
         }
         
         handler = tool_handlers.get(tool_name)
@@ -452,7 +512,36 @@ class LinearyMCPServer:
             'total_story_points': sum(t['story_points'] for t in tasks),
             'message': f"Generated {len(created_tasks)} tasks for '{args['feature_description']}'"
         }
-    
+
+    async def propose_action(self, args: Dict) -> Dict:
+        """Emit a proposal into the Review queue for human review."""
+        body = {k: v for k, v in args.items() if v is not None}
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
+            async with session.post(f"{self.api_url}/proposals", json=body) as response:
+                status = response.status
+                try:
+                    data = await response.json()
+                except Exception:
+                    data = {'raw': await response.text()}
+                if status in (200, 201):
+                    return {
+                        'success': True,
+                        'proposal_id': data.get('id'),
+                        'status': data.get('status'),
+                        'message': 'Proposal sent to Review queue. The human will see it on their next glance.'
+                    }
+                return {'success': False, 'status': status, 'error': data}
+
+    async def agent_heartbeat(self, args: Dict) -> Dict:
+        """Record agent presence for the live strip."""
+        body = {k: v for k, v in args.items() if v is not None}
+        async with aiohttp.ClientSession(headers=self.auth_headers) as session:
+            async with session.post(f"{self.api_url}/agents/presence", json=body) as response:
+                if response.status in (200, 201):
+                    data = await response.json()
+                    return {'success': True, 'session_id': data.get('id')}
+                return {'success': False, 'status': response.status, 'error': await response.text()}
+
     async def list_resources(self, params: Dict) -> Dict[str, Any]:
         """List available Lineary resources"""
         return {

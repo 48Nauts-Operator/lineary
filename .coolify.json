@@ -12,7 +12,7 @@
   },
   "apps": {
     "stack": {
-      "uuid": "",
+      "uuid": "hk440k8wg8wo48sw4g48ggww",
       "compose_file": "docker-compose.prod.yml",
       "domain_prod": "lineary.ai",
       "healthcheck_path": "/api/health"
