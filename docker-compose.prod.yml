@@ -71,10 +71,10 @@ services:
         VITE_STACK_PROJECT_ID: ${STACK_PROJECT_ID}
     depends_on:
       - backend
-    # Coolify "Magic Environment Variables" — SERVICE_FQDN_<SERVICE>_<PORT>
-    # tells Coolify's proxy which service to route the assigned FQDN to.
+    # Coolify "Magic Environment Variables" — SERVICE_FQDN_<SERVICE>=/<path>
+    # binds the Application's assigned FQDN to this service.
     environment:
-      - SERVICE_FQDN_FRONTEND_80
+      - SERVICE_FQDN_FRONTEND=/
     ports:
       - "80"
     healthcheck:
