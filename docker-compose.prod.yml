@@ -50,17 +50,17 @@ services:
       STACK_PROJECT_ID: ${STACK_PROJECT_ID}
       STACK_SECRET_SERVER_KEY: ${STACK_SECRET_SERVER_KEY}
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - postgres
+      - redis
     expose:
       - "8000"
+    # Use the same node-based probe the Dockerfile declares — no extra deps.
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/health"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:8000/api/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   frontend:
@@ -73,11 +73,13 @@ services:
       - backend
     expose:
       - "80"
+    # BusyBox wget is present in nginx:alpine.
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 15s
     restart: unless-stopped
     # Traefik labels for Coolify — route lineary.ai to this container on port 80.
     labels:

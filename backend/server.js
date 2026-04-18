@@ -9,6 +9,22 @@ const TokenEstimator = require('./services/tokenEstimator');
 const docsRouter = require('./routes/docs');
 const { requireAuth, userOwnsProject, projectIdForIssue, projectIdForSprint } = require('./middleware/requireAuth');
 const authRoutes = require('./routes/auth');
+const githubInstallRoutes = require('./routes/github/install');
+const agentsRoutes = require('./routes/agents');
+const releasesRoutes = require('./routes/releases');
+const operationsRoutes = require('./routes/operations');
+const { enqueue: ghOutboxEnqueue } = require('./lib/github/outbox');
+
+// Helper: only enqueue reverse-sync rows when the project is linked to a GitHub repo.
+async function enqueueIfGitHubMode(projectId, kind, payload, linearyRef) {
+  const { rows } = await pool.query(`SELECT mode FROM projects WHERE id = $1`, [projectId]);
+  if (rows[0]?.mode !== 'github') return;
+  try {
+    await ghOutboxEnqueue(pool, { projectId, kind, payload, linearyRef });
+  } catch (err) {
+    console.error('[outbox-enqueue]', kind, err.message);
+  }
+}
 const app = express();
 
 // Initialize services
@@ -31,7 +47,10 @@ const redis = Redis.createClient({
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  // Preserve the raw body on every request so webhook handlers can verify HMAC signatures.
+  verify: (req, _res, buf) => { req.rawBody = buf; }
+}));
 
 // Health check endpoints (must be before requireAuth to avoid 401 on probes)
 app.get('/health', (req, res) => {
@@ -56,6 +75,18 @@ app.use(requireAuth(pool));
 
 // Auth routes (must come after requireAuth so req.user is set)
 app.use('/api', authRoutes(pool));
+
+// GitHub install flow (install-callback is on the bypass list; others require auth)
+app.use('/api', githubInstallRoutes(pool));
+
+// Agents, proposals, and presence for the AI-first Review surface.
+app.use('/api', agentsRoutes(pool));
+
+// Releases — bundles of merged work as changelog entries.
+app.use('/api', releasesRoutes(pool));
+
+// Operations — AI-era metrics (tokens, auto-approve rate, etc.)
+app.use('/api', operationsRoutes(pool));
 
 // Ownership guards: match UUID-shaped path segments and reject access to
 // projects/issues/sprints the caller doesn't own. Covers every subpath in
@@ -284,13 +315,14 @@ app.post('/api/projects/:id/test-repo-connection', async (req, res) => {
 });
 
 app.post('/api/projects', async (req, res) => {
-  const { name, description, color, icon } = req.body;
+  const { name, description, color, icon, mode } = req.body;
+  const resolvedMode = mode === 'github' ? 'github' : 'mcp_only';
   try {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
     const result = await pool.query(
-      'INSERT INTO projects (name, description, slug, color, icon, owner_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [name, description, slug, color || '#8B5CF6', icon || 'folder', req.user.id]
+      'INSERT INTO projects (name, description, slug, color, icon, owner_id, mode) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [name, description, slug, color || '#8B5CF6', icon || 'folder', req.user.id, resolvedMode]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -324,7 +356,7 @@ app.patch('/api/projects/:id', async (req, res) => {
   const updates = req.body;
   const allowedFields = [
     'name', 'description', 'color', 'icon', 'status',
-    'github_repo', 'gitlab_repo', 'repo_type'
+    'github_repo', 'gitlab_repo', 'repo_type', 'mode'
   ];
 
   try {
@@ -363,6 +395,62 @@ app.patch('/api/projects/:id', async (req, res) => {
 });
 
 // Project documentation
+// Pulse — live feed of recent events in a project (activities + comments).
+// The global project-ownership regex guard already gates this by owner_id.
+app.get('/api/projects/:id/pulse', async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+  try {
+    const { rows } = await pool.query(
+      `
+      SELECT kind, id, issue_id, issue_title, issue_key, activity_type, description,
+             user_id, user_type, metadata, created_at
+      FROM (
+        SELECT 'activity' AS kind,
+               a.id::text AS id,
+               a.issue_id::text AS issue_id,
+               i.title AS issue_title,
+               substring(i.id::text from 1 for 7) AS issue_key,
+               a.activity_type,
+               a.description,
+               NULL::text AS user_id,
+               a.user_type,
+               a.metadata,
+               a.created_at
+        FROM issue_activities a
+        JOIN issues i ON i.id = a.issue_id
+        WHERE i.project_id = $1
+
+        UNION ALL
+
+        SELECT 'comment' AS kind,
+               c.id::text,
+               c.issue_id::text,
+               i.title,
+               substring(i.id::text from 1 for 7),
+               'comment'::text AS activity_type,
+               left(c.content, 180) AS description,
+               c.user_id,
+               c.user_type,
+               CASE WHEN c.github_comment_id IS NOT NULL
+                    THEN jsonb_build_object('github_comment_id', c.github_comment_id, 'sync_origin', c.sync_origin)
+                    ELSE '{}'::jsonb END AS metadata,
+               c.created_at
+        FROM issue_comments c
+        JOIN issues i ON i.id = c.issue_id
+        WHERE i.project_id = $1
+      ) feed
+      ORDER BY created_at DESC
+      LIMIT $2
+      `,
+      [req.params.id, limit]
+    );
+    res.json({ events: rows });
+  } catch (error) {
+    console.error('pulse query failed:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/projects/:id/documentation', async (req, res) => {
   try {
     const result = await pool.query(
@@ -491,7 +579,15 @@ app.post('/api/issues', async (req, res) => {
        DO UPDATE SET activity_count = project_activity.activity_count + 1`,
       [project_id]
     );
-    
+
+    // Reverse sync to GitHub if this project is git-connected.
+    await enqueueIfGitHubMode(
+      project_id,
+      'issue.create',
+      { title, body: description || '' },
+      result.rows[0].id
+    );
+
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -538,7 +634,7 @@ app.patch('/api/issues/:id', async (req, res) => {
         `UPDATE issues SET completed_at = CURRENT_TIMESTAMP WHERE id = $1 AND completed_at IS NULL`,
         [req.params.id]
       );
-      
+
       await pool.query(
         `INSERT INTO project_activity (project_id, activity_date, activity_type, activity_count)
          VALUES ($1, CURRENT_DATE, 'issue_completed', 1)
@@ -547,7 +643,48 @@ app.patch('/api/issues/:id', async (req, res) => {
         [result.rows[0].project_id]
       );
     }
-    
+
+    // Reverse sync to GitHub.
+    const updated = result.rows[0];
+    if (updated.github_issue_number) {
+      if (updates.status === 'done') {
+        await enqueueIfGitHubMode(
+          updated.project_id,
+          'issue.close',
+          { github_issue_number: updated.github_issue_number },
+          updated.id
+        );
+      } else if (updates.status && updates.status !== 'done') {
+        // Potential reopen — enqueue; outbox will no-op if the GH issue is already open.
+        await enqueueIfGitHubMode(
+          updated.project_id,
+          'issue.reopen',
+          { github_issue_number: updated.github_issue_number },
+          updated.id
+        );
+      }
+      if (updates.title !== undefined || updates.description !== undefined) {
+        await enqueueIfGitHubMode(
+          updated.project_id,
+          'issue.update',
+          {
+            github_issue_number: updated.github_issue_number,
+            title: updated.title,
+            body: updated.description || '',
+          },
+          updated.id
+        );
+      }
+    } else if (updated.project_id) {
+      // Lineary issue not yet linked to GitHub — enqueue creation so it mirrors there.
+      await enqueueIfGitHubMode(
+        updated.project_id,
+        'issue.create',
+        { title: updated.title, body: updated.description || '' },
+        updated.id
+      );
+    }
+
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1038,17 +1175,14 @@ app.use('/api', oauthRoutes(pool));
 
 // Mount webhook routes
 const webhookRoutes = require('./routes/webhooks');
-// Temporarily disabled due to @octokit/app ESM incompatibility
-// const githubAppRoutes = require('./routes/github-app');
 const aiFeedbackRoutes = require('./routes/ai-feedback');
 app.use('/api', webhookRoutes(pool));
 
-// Add database to request for GitHub App and AI feedback routes
+// Expose db on req for downstream route modules.
 app.use((req, res, next) => {
   req.db = pool;
   next();
 });
-// app.use('/api', githubAppRoutes); // Temporarily disabled
 app.use('/api', aiFeedbackRoutes);
 
 // ============ TAGS API ============
@@ -1680,8 +1814,14 @@ async function startServer() {
     
     app.listen(PORT, () => {
       console.log(`Lineary backend running on port ${PORT}`);
-      console.log(`Public URL: https://lineary.blockonauts.io`);
     });
+
+    // Start the GitHub sync poller (fallback + outbox drain).
+    try {
+      require('./workers/github-poller').start(pool);
+    } catch (err) {
+      console.error('[github-poller] failed to start:', err.message);
+    }
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

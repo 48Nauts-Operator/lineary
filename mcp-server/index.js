@@ -152,13 +152,58 @@ class LinearyMCPServer {
             properties: {
               project_id: { type: 'string', description: 'Project ID' },
               feature_description: { type: 'string', description: 'Feature to break down' },
-              complexity: { 
-                type: 'string', 
-                enum: ['simple', 'medium', 'complex'], 
-                default: 'medium' 
+              complexity: {
+                type: 'string',
+                enum: ['simple', 'medium', 'complex'],
+                default: 'medium'
               }
             },
             required: ['project_id', 'feature_description']
+          }
+        },
+        {
+          name: 'propose_action',
+          description:
+            'Propose an action on a Lineary project that needs human review. ' +
+            'Use this instead of acting directly when blast_radius is medium/high, ' +
+            'when confidence is uncertain, or when you need a human decision between ' +
+            'equally reasonable paths. Emits a proposal into the Review queue.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              project_id: { type: 'string' },
+              agent_slug: { type: 'string' },
+              kind: {
+                type: 'string',
+                enum: ['merge_pr', 'close_issue', 'split_issue', 'ask_question', 'create_issue', 'update_issue']
+              },
+              target_issue_id: { type: 'string' },
+              target_label: { type: 'string' },
+              payload: { type: 'object' },
+              reasoning: { type: 'string' },
+              confidence: { type: 'number', minimum: 0, maximum: 1 },
+              blast_radius: { type: 'string', enum: ['low', 'medium', 'high'], default: 'low' },
+              urgency: { type: 'string', enum: ['urgent', 'normal', 'low'], default: 'normal' },
+              auto_approve_seconds: { type: 'number' }
+            },
+            required: ['project_id', 'kind']
+          }
+        },
+        {
+          name: 'agent_heartbeat',
+          description:
+            'Send a presence heartbeat so the human sees what you are doing in the Live strip. ' +
+            'Call when you start a task, change state, or every 30-60 seconds during long work.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              agent_slug: { type: 'string' },
+              project_id: { type: 'string' },
+              status: { type: 'string', enum: ['active', 'idle', 'waiting', 'finished'], default: 'active' },
+              current_task: { type: 'string' },
+              current_target: { type: 'string' }
+            },
+            required: ['agent_slug']
           }
         }
       ]
@@ -185,6 +230,10 @@ class LinearyMCPServer {
           return await this.createSprint(args);
         case 'generate_ai_tasks':
           return await this.generateAITasks(args);
+        case 'propose_action':
+          return await this.proposeAction(args);
+        case 'agent_heartbeat':
+          return await this.agentHeartbeat(args);
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
@@ -560,6 +609,56 @@ class LinearyMCPServer {
           { type: 'text', text: `❌ Error generating tasks: ${error.message}` }
         ]
       };
+    }
+  }
+
+  async proposeAction(args) {
+    try {
+      const body = {};
+      for (const [k, v] of Object.entries(args || {})) {
+        if (v !== undefined && v !== null) body[k] = v;
+      }
+      const response = await fetch(`${API_URL}/proposals`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return {
+          content: [{ type: 'text', text: `❌ Proposal rejected (${response.status}): ${JSON.stringify(data)}` }],
+        };
+      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ Proposal ${data.id} queued for human review. Status: ${data.status}. The human will see it next time they glance at Lineary.`,
+          },
+        ],
+      };
+    } catch (error) {
+      return { content: [{ type: 'text', text: `❌ Error sending proposal: ${error.message}` }] };
+    }
+  }
+
+  async agentHeartbeat(args) {
+    try {
+      const body = {};
+      for (const [k, v] of Object.entries(args || {})) {
+        if (v !== undefined && v !== null) body[k] = v;
+      }
+      const response = await fetch(`${API_URL}/agents/presence`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        const err = await response.text();
+        return { content: [{ type: 'text', text: `❌ Heartbeat rejected (${response.status}): ${err}` }] };
+      }
+      const data = await response.json();
+      return { content: [{ type: 'text', text: `💓 session ${data.id} updated` }] };
+    } catch (error) {
+      return { content: [{ type: 'text', text: `❌ Error sending heartbeat: ${error.message}` }] };
     }
   }
 

@@ -151,4 +151,5 @@ models/
 # License keys (Enterprise)
 license.key
 enterprise.key
-*.license
+*.license*.generated
+.env.coolify.*
