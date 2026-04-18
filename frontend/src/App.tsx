@@ -17,6 +17,7 @@ import { ProjectPulse } from './components/ProjectPulse'
 import { ReviewPage } from './pages/ReviewPage'
 import { ProjectDashboard } from './pages/ProjectDashboard'
 import { AgentsPage } from './pages/AgentsPage'
+import { OperationsPage } from './pages/OperationsPage'
 import IntegrationCards from './components/IntegrationCards'
 import AutopilotDashboard from './components/AutopilotDashboard'
 import BugReportForm from './components/BugReportForm'
@@ -369,9 +370,7 @@ const App: React.FC = () => {
           <DocsPage selectedProject={selectedProject} projects={projects} />
         )}
 
-        {activeTab === 'operations' && (
-          <AnalyticsPage selectedProject={selectedProject} projects={projects} />
-        )}
+        {activeTab === 'operations' && <OperationsPage />}
 
         {activeTab === 'account' && (
           <AccountPage />

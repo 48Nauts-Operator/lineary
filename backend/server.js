@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth');
 const githubInstallRoutes = require('./routes/github/install');
 const agentsRoutes = require('./routes/agents');
 const releasesRoutes = require('./routes/releases');
+const operationsRoutes = require('./routes/operations');
 const { enqueue: ghOutboxEnqueue } = require('./lib/github/outbox');
 
 // Helper: only enqueue reverse-sync rows when the project is linked to a GitHub repo.
@@ -83,6 +84,9 @@ app.use('/api', agentsRoutes(pool));
 
 // Releases — bundles of merged work as changelog entries.
 app.use('/api', releasesRoutes(pool));
+
+// Operations — AI-era metrics (tokens, auto-approve rate, etc.)
+app.use('/api', operationsRoutes(pool));
 
 // Ownership guards: match UUID-shaped path segments and reject access to
 // projects/issues/sprints the caller doesn't own. Covers every subpath in
