@@ -71,11 +71,12 @@ services:
         VITE_STACK_PROJECT_ID: ${STACK_PROJECT_ID}
     depends_on:
       - backend
-    # Coolify "Magic Environment Variables" — SERVICE_FQDN_<SERVICE>=/<path>
-    # binds the Application's assigned FQDN to this service.
-    environment:
-      - SERVICE_FQDN_FRONTEND=/
-    ports:
+    # Coolify's Docker Compose proxy auto-generates a *.rongbuk.net hostname
+    # per service (visible in docker_compose_domains on the Application) and
+    # injects Traefik labels routing that hostname to whichever service
+    # `expose`s the port. Use `expose`, not `ports` — `ports` skips Traefik
+    # and binds to the host instead.
+    expose:
       - "80"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
