@@ -1,0 +1,12 @@
+{
+  "name": "lineary-runner",
+  "version": "0.1.0",
+  "description": "Autonomous dispatch runner for Lineary. Long-polls for issues tagged auto_handle and runs headless Claude Code / Codex / OpenCode in a git worktree.",
+  "bin": {
+    "lineary-runner": "./lineary-runner.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

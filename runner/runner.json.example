@@ -1,0 +1,9 @@
+{
+  "runner_id": "paste-the-uuid-you-got-from-lineary",
+  "token": "lrn_paste_the_raw_token_shown_once",
+  "api_url": "http://localhost:3134",
+  "project_paths": {
+    "85d8e86d-af9f-4c8b-9024-dd410ff5f4a4": "/absolute/path/to/your/local/repo",
+    "lineary-dev": "/absolute/path/to/your/local/repo"
+  }
+}

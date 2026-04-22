@@ -58,10 +58,10 @@ function relativeTime(iso: string) {
 }
 
 const STATUS_STYLE: Record<string, { bg: string; fg: string; border: string; dot: string; label: string }> = {
-  backlog: { bg: '#1A1D28', fg: '#878A98', border: '#262832', dot: '#5A5D6E', label: 'Backlog' },
-  todo: { bg: '#1A1D28', fg: '#878A98', border: '#262832', dot: '#878A98', label: 'To do' },
+  backlog: { bg: '#32343E', fg: '#878A98', border: '#3A3D47', dot: '#5A5D6E', label: 'Backlog' },
+  todo: { bg: '#32343E', fg: '#878A98', border: '#3A3D47', dot: '#878A98', label: 'To do' },
   in_progress: { bg: '#1F2A3A', fg: '#9FBCE8', border: '#253446', dot: '#6EA0F5', label: 'In progress' },
-  in_review: { bg: '#2A1F3E', fg: '#C8A8FF', border: '#3A2F4E', dot: '#9B8CFF', label: 'In review' },
+  in_review: { bg: '#3A2F1E', fg: '#FBBF24', border: '#4A3A1E', dot: '#F59E0B', label: 'In review' },
   done: { bg: '#1F2E1F', fg: '#7FD38E', border: '#2F4A2F', dot: '#34D399', label: 'Done' },
   cancelled: { bg: '#2A1F1F', fg: '#E88888', border: '#3A2828', dot: '#F87171', label: 'Cancelled' },
 };
@@ -70,15 +70,45 @@ function statusStyle(status?: string) {
   return STATUS_STYLE[status || 'todo'] || STATUS_STYLE.todo;
 }
 
+interface Dispatch {
+  id: string;
+  runtime: 'claude' | 'codex' | 'opencode';
+  status: 'pending' | 'claimed' | 'running' | 'completed' | 'failed' | 'cancelled';
+  pr_url: string | null;
+  pr_number: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  runner_name: string | null;
+}
+
 export default function IssueStream({ issue, isOpen, onClose, onUpdate, projects }: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [composer, setComposer] = useState('');
   const [posting, setPosting] = useState(false);
+  const [autoHandle, setAutoHandle] = useState<boolean>(!!(issue as any).auto_handle);
+  const [runnerPref, setRunnerPref] = useState<string>((issue as any).runner_preference || 'any');
+  const [dispatches, setDispatches] = useState<Dispatch[]>([]);
 
   const project = projects.find((p) => p.id === issue.project_id);
   const gitMode = project?.mode === 'github';
   const ghNumber = (issue as any).github_issue_number as number | null | undefined;
+  const activeDispatch = dispatches.find((d) => ['pending', 'claimed', 'running'].includes(d.status));
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setAutoHandle(!!(issue as any).auto_handle);
+    setRunnerPref((issue as any).runner_preference || 'any');
+    const loadDispatches = () =>
+      axios
+        .get(`${API_URL}/issues/${issue.id}/dispatches`)
+        .then((r) => setDispatches(r.data || []))
+        .catch(() => setDispatches([]));
+    loadDispatches();
+    const t = setInterval(loadDispatches, 5000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, issue.id]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -131,7 +161,7 @@ export default function IssueStream({ issue, isOpen, onClose, onUpdate, projects
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center overflow-auto bg-black/70 backdrop-blur-sm">
-      <div className="relative my-10 w-[860px] rounded-xl border border-gray-800 bg-[#0D0E12] shadow-2xl">
+      <div className="relative my-10 w-[860px] rounded-xl border border-gray-800 bg-[#23252C] shadow-2xl">
         {/* top bar */}
         <div className="flex items-center justify-between border-b border-gray-800 px-8 py-3">
           <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -160,7 +190,7 @@ export default function IssueStream({ issue, isOpen, onClose, onUpdate, projects
               {s.label}
             </span>
             {gitMode && ghNumber ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-800 bg-[#1A1D28] px-2.5 py-1 font-mono text-[11px] text-gray-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-800 bg-[#32343E] px-2.5 py-1 font-mono text-[11px] text-gray-400">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 .297C5.373.297 0 5.67 0 12.297c0 5.302 3.438 9.8 8.207 11.387.6.113.82-.258.82-.577 0-.285-.011-1.04-.017-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.744.083-.729.083-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.834 2.809 1.304 3.495.997.108-.775.419-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.468-2.382 1.236-3.222-.124-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.3 1.23a11.5 11.5 0 013.003-.404c1.018.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.912 1.235 3.222 0 4.61-2.804 5.625-5.475 5.92.43.37.814 1.102.814 2.222 0 1.604-.015 2.896-.015 3.286 0 .322.218.697.825.577C20.565 22.093 24 17.595 24 12.297 24 5.67 18.627.297 12 .297" />
                 </svg>
@@ -190,6 +220,35 @@ export default function IssueStream({ issue, isOpen, onClose, onUpdate, projects
           </div>
         </div>
 
+        {/* auto_handle toggle */}
+        <AutoHandlePanel
+          issueId={issue.id}
+          autoHandle={autoHandle}
+          runnerPref={runnerPref}
+          activeDispatch={activeDispatch}
+          onToggle={async (v) => {
+            setAutoHandle(v);
+            try {
+              await axios.patch(`${API_URL}/issues/${issue.id}`, { auto_handle: v });
+              onUpdate();
+            } catch {
+              setAutoHandle(!v);
+              toast.error('Failed to update');
+            }
+          }}
+          onPrefChange={async (p) => {
+            setRunnerPref(p);
+            try {
+              await axios.patch(`${API_URL}/issues/${issue.id}`, { runner_preference: p });
+            } catch {
+              toast.error('Failed to update');
+            }
+          }}
+        />
+
+        {/* live dispatch stream */}
+        {activeDispatch ? <DispatchStream dispatchId={activeDispatch.id} /> : null}
+
         {/* description */}
         {issue.description ? (
           <div className="border-b border-gray-800 px-8 py-5 text-[14px] leading-[22px] text-gray-300">
@@ -210,12 +269,12 @@ export default function IssueStream({ issue, isOpen, onClose, onUpdate, projects
         </div>
 
         {/* composer */}
-        <div className="mx-8 mb-8 mt-4 rounded-xl border border-gray-800 bg-[#12141B] p-4">
+        <div className="mx-8 mb-8 mt-4 rounded-xl border border-gray-800 bg-[#2B2D36] p-4">
           <div className="mb-2 text-[11px] text-gray-500">
             {gitMode && ghNumber ? (
               <>
                 Reply — also posts to{' '}
-                <span className="font-mono text-[#9B8CFF]">GH#{ghNumber}</span>
+                <span className="font-mono text-[#F59E0B]">GH#{ghNumber}</span>
               </>
             ) : (
               <>Reply (agents and you can comment here)</>
@@ -235,7 +294,7 @@ export default function IssueStream({ issue, isOpen, onClose, onUpdate, projects
             <button
               onClick={postComment}
               disabled={posting || !composer.trim()}
-              className="rounded-md bg-[#7B61FF] px-4 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40"
+              className="rounded-md bg-[#C2410C] px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-[#D97706] disabled:opacity-40"
             >
               {posting ? 'Posting…' : 'Comment'}
             </button>
@@ -258,7 +317,7 @@ function StreamEntry({ entry }: { entry: Entry }) {
 
 function LaneDot({ color = '#5A5D6E' }: { color?: string }) {
   return (
-    <div className="z-10 flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full bg-[#0D0E12]">
+    <div className="z-10 flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full bg-[#23252C]">
       <div className="h-2 w-2 rounded-full" style={{ background: color }} />
     </div>
   );
@@ -269,7 +328,7 @@ function Avatar({ label, github }: { label: string; github?: boolean }) {
     <div className="relative z-10 flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full bg-[#26283A] text-[9px] font-semibold text-gray-200">
       {label.slice(0, 2).toUpperCase()}
       {github ? (
-        <div className="absolute -right-0.5 -bottom-0.5 flex h-[12px] w-[12px] items-center justify-center rounded-full bg-[#0D0E12]">
+        <div className="absolute -right-0.5 -bottom-0.5 flex h-[12px] w-[12px] items-center justify-center rounded-full bg-[#23252C]">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="#878A98">
             <path d="M12 .297C5.373.297 0 5.67 0 12.297c0 5.302 3.438 9.8 8.207 11.387.6.113.82-.258.82-.577 0-.285-.011-1.04-.017-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.744.083-.729.083-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.834 2.809 1.304 3.495.997.108-.775.419-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.468-2.382 1.236-3.222-.124-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.3 1.23a11.5 11.5 0 013.003-.404c1.018.005 2.045.138 3.003.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.912 1.235 3.222 0 4.61-2.804 5.625-5.475 5.92.43.37.814 1.102.814 2.222 0 1.604-.015 2.896-.015 3.286 0 .322.218.697.825.577C20.565 22.093 24 17.595 24 12.297 24 5.67 18.627.297 12 .297" />
           </svg>
@@ -314,13 +373,13 @@ function EventCommit({ entry }: { entry: Entry & { kind: 'activity' } }) {
   const sha = (meta.commit_sha as string) || '';
   return (
     <div className="flex items-center gap-3 py-2">
-      <div className="z-10 flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full bg-[#0D0E12]">
+      <div className="z-10 flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full bg-[#23252C]">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#878A98" strokeWidth="2">
           <circle cx="12" cy="12" r="4" />
           <path d="M1.05 12H8m8 0h7" strokeLinecap="round" />
         </svg>
       </div>
-      <span className="flex-shrink-0 font-mono text-[12px] font-medium text-[#9B8CFF]">{sha.slice(0, 7)}</span>
+      <span className="flex-shrink-0 font-mono text-[12px] font-medium text-[#F59E0B]">{sha.slice(0, 7)}</span>
       <span className="flex-1 truncate text-[13px] text-gray-300">{entry.description}</span>
       {meta.author ? <span className="flex-shrink-0 text-[12px] text-gray-400">@{meta.author}</span> : null}
       <span className="flex-shrink-0 font-mono text-[11px] text-gray-600">{relativeTime(entry.created_at)}</span>
@@ -331,8 +390,8 @@ function EventCommit({ entry }: { entry: Entry & { kind: 'activity' } }) {
 function EventPR({ entry }: { entry: Entry & { kind: 'activity' } }) {
   const meta = (entry.metadata as any) || {};
   const isMerge = entry.activity_type === 'pr_merged' || entry.activity_type === 'pr_closed';
-  const accent = isMerge ? '#C084FC' : '#4ADE80';
-  const bg = isMerge ? '#2A1F3E' : '#1F2E1F';
+  const accent = isMerge ? '#F59E0B' : '#4ADE80';
+  const bg = isMerge ? '#3A2F1E' : '#1F2E1F';
   const border = isMerge ? '#4A3970' : '#2F4A2F';
   const label = isMerge ? (entry.activity_type === 'pr_merged' ? 'Merged' : 'Closed') : 'Opened';
   return (
@@ -347,7 +406,7 @@ function EventPR({ entry }: { entry: Entry & { kind: 'activity' } }) {
           <path d="M6 21V9a9 9 0 009 9" />
         </svg>
       </div>
-      <div className="flex-1 rounded-lg border border-gray-800 bg-[#12141B] p-3">
+      <div className="flex-1 rounded-lg border border-gray-800 bg-[#2B2D36] p-3">
         <div className="mb-1 flex items-center gap-2 text-[11px] text-gray-500">
           <span>PR {label.toLowerCase()}</span>
           <span className="font-mono text-[11px] text-gray-500">via GitHub</span>
@@ -355,7 +414,7 @@ function EventPR({ entry }: { entry: Entry & { kind: 'activity' } }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {meta.pr_number ? (
-            <a href={meta.pr_url || '#'} target="_blank" rel="noreferrer" className="font-mono text-[13px] font-medium text-[#9B8CFF]">
+            <a href={meta.pr_url || '#'} target="_blank" rel="noreferrer" className="font-mono text-[13px] font-medium text-[#F59E0B]">
               #{meta.pr_number}
             </a>
           ) : null}
@@ -368,6 +427,111 @@ function EventPR({ entry }: { entry: Entry & { kind: 'activity' } }) {
           </span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AutoHandlePanel({
+  autoHandle,
+  runnerPref,
+  activeDispatch,
+  onToggle,
+  onPrefChange,
+}: {
+  issueId: string;
+  autoHandle: boolean;
+  runnerPref: string;
+  activeDispatch?: Dispatch;
+  onToggle: (v: boolean) => void;
+  onPrefChange: (p: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-4 border-b border-[#C2410C]/15 bg-[#2B2D36]/40 px-8 py-3">
+      <label className="flex items-center gap-2 text-[13px] text-gray-300">
+        <input
+          type="checkbox"
+          checked={autoHandle}
+          onChange={(e) => onToggle(e.target.checked)}
+          className="accent-[#C2410C]"
+        />
+        <span className="font-medium">Auto-handle</span>
+        <span className="text-gray-500">— let a runner pick this up and open a PR.</span>
+      </label>
+      <div className="flex items-center gap-2 text-[12px] text-gray-500">
+        <span>Runtime:</span>
+        <select
+          value={runnerPref}
+          onChange={(e) => onPrefChange(e.target.value)}
+          disabled={!autoHandle}
+          className="rounded border border-[#C2410C]/30 bg-[#23252C] px-2 py-0.5 text-[12px] text-gray-200 focus:outline-none disabled:opacity-50"
+        >
+          <option value="any">any</option>
+          <option value="claude">claude</option>
+          <option value="codex">codex</option>
+          <option value="opencode">opencode</option>
+        </select>
+      </div>
+      {activeDispatch ? (
+        <span className="ml-auto inline-flex items-center gap-2 rounded-full border border-[#4A3A1E] bg-[#3A2F1E] px-2.5 py-1 text-[11px] text-[#FBBF24]">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F59E0B]" />
+          {activeDispatch.runner_name || 'runner'} · {activeDispatch.runtime} · {activeDispatch.status}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function DispatchStream({ dispatchId }: { dispatchId: string }) {
+  const [lines, setLines] = useState<Array<{ t: string; l: string }>>([]);
+  const [done, setDone] = useState<{ status: string; pr_url: string | null } | null>(null);
+
+  useEffect(() => {
+    const es = new EventSource(`${API_URL}/dispatches/${dispatchId}/stream`, { withCredentials: false });
+    es.addEventListener('line', (ev: any) => {
+      try {
+        const data = JSON.parse(ev.data);
+        setLines((prev) => [...prev.slice(-499), data]);
+      } catch {
+        // ignore
+      }
+    });
+    es.addEventListener('done', (ev: any) => {
+      try {
+        setDone(JSON.parse(ev.data));
+      } catch {}
+      es.close();
+    });
+    es.addEventListener('error', () => es.close());
+    return () => es.close();
+  }, [dispatchId]);
+
+  return (
+    <div className="mx-8 mt-4 overflow-hidden rounded-lg border border-[#C2410C]/25 bg-[#14151A]">
+      <div className="flex items-center justify-between border-b border-[#C2410C]/20 bg-[#1A1C22] px-3 py-1.5 text-[11px] text-gray-500">
+        <span>runner stdout — dispatch {dispatchId.slice(0, 8)}</span>
+        {done ? (
+          <span className={done.status === 'completed' ? 'text-[#7FD38E]' : 'text-red-400'}>
+            {done.status}
+            {done.pr_url ? (
+              <>
+                {' '}
+                ·{' '}
+                <a className="underline hover:text-gray-200" href={done.pr_url} target="_blank" rel="noreferrer">
+                  view PR
+                </a>
+              </>
+            ) : null}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-[#F59E0B]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F59E0B]" />
+            live
+          </span>
+        )}
+      </div>
+      <pre className="max-h-[260px] overflow-auto whitespace-pre-wrap p-3 font-mono text-[12px] leading-[18px] text-gray-300">
+        {lines.length === 0 ? <span className="text-gray-600">waiting for output…</span> : lines.map((l) => l.l).join('\n')}
+      </pre>
     </div>
   );
 }
