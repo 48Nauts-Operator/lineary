@@ -8,6 +8,8 @@ const BYPASS_PATHS = [
   /^\/api\/github\/webhook$/,                 // Archived route path — kept in bypass for any stragglers
   /^\/api\/github\/install-callback$/,         // GitHub redirects here; identity via signed state JWT
   /^\/api\/auth\/oauth\//,
+  /^\/api\/runners\/[0-9a-f-]+\/next-dispatch$/,       // Runner daemon long-poll (X-Runner-Token auth)
+  /^\/api\/runners\/[0-9a-f-]+\/dispatches\//,          // Runner daemon stdout/complete (X-Runner-Token auth)
 ];
 
 function isBypass(reqPath) {

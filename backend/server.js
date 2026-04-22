@@ -13,6 +13,8 @@ const githubInstallRoutes = require('./routes/github/install');
 const agentsRoutes = require('./routes/agents');
 const releasesRoutes = require('./routes/releases');
 const operationsRoutes = require('./routes/operations');
+const runnerRoutes = require('./routes/runners');
+const { startDispatcher } = require('./workers/dispatcher');
 const { enqueue: ghOutboxEnqueue } = require('./lib/github/outbox');
 
 // Helper: only enqueue reverse-sync rows when the project is linked to a GitHub repo.
@@ -87,6 +89,10 @@ app.use('/api', releasesRoutes(pool));
 
 // Operations — AI-era metrics (tokens, auto-approve rate, etc.)
 app.use('/api', operationsRoutes(pool));
+
+// Autonomous runner dispatch — runner-token routes bypass requireAuth (see middleware);
+// user-auth routes (list/register/delete, SSE tail) run with req.user.
+app.use('/api', runnerRoutes(pool));
 
 // Ownership guards: match UUID-shaped path segments and reject access to
 // projects/issues/sprints the caller doesn't own. Covers every subpath in
@@ -597,9 +603,10 @@ app.post('/api/issues', async (req, res) => {
 app.patch('/api/issues/:id', async (req, res) => {
   const updates = req.body;
   const allowedFields = [
-    'title', 'description', 'status', 'priority', 
-    'completion_scope', 'start_date', 'end_date', 
-    'token_cost', 'ai_prompt', 'sprint_id'
+    'title', 'description', 'status', 'priority',
+    'completion_scope', 'start_date', 'end_date',
+    'token_cost', 'ai_prompt', 'sprint_id',
+    'auto_handle', 'runner_preference'
   ];
   
   try {
@@ -1821,6 +1828,13 @@ async function startServer() {
       require('./workers/github-poller').start(pool);
     } catch (err) {
       console.error('[github-poller] failed to start:', err.message);
+    }
+
+    // Start the runner dispatcher loop.
+    try {
+      startDispatcher(pool);
+    } catch (err) {
+      console.error('[dispatcher] failed to start:', err.message);
     }
   } catch (error) {
     console.error('Failed to start server:', error);

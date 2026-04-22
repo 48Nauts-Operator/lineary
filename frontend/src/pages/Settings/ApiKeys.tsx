@@ -15,7 +15,20 @@ export function ApiKeysPage() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [name, setName] = useState('');
   const [newKey, setNewKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const copyKey = async () => {
+    if (!newKey) return;
+    try {
+      await navigator.clipboard.writeText(newKey);
+      setCopied(true);
+      toast.success('Copied');
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error('Copy failed');
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -67,7 +80,15 @@ export function ApiKeysPage() {
       {newKey && (
         <div className="mb-6 rounded border border-green-700 bg-green-900/30 p-4">
           <div className="mb-2 text-sm font-medium text-green-200">Copy this key now — it won't be shown again.</div>
-          <code className="block break-all rounded bg-black/40 p-2 text-sm text-green-100">{newKey}</code>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 break-all rounded bg-black/40 p-2 text-sm text-green-100">{newKey}</code>
+            <button
+              onClick={copyKey}
+              className="flex-shrink-0 rounded-md bg-[#C2410C] px-3 py-2 text-xs font-medium text-white hover:bg-[#D97706]"
+            >
+              {copied ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
           <button className="mt-2 text-xs text-green-200 underline" onClick={() => setNewKey(null)}>
             Dismiss
           </button>

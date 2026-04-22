@@ -58,7 +58,7 @@ LLM (Claude/AI) → Lineary (Tasks) → Git (Code) → Claude Review → Lineary
 - **AI Learning Loop** - Improves estimation accuracy over time (typically 5-10% per sprint)
 - **Test Generation** - Automatic Gherkin test case creation
 - **Issue Breakdown** - Split large tasks into manageable subtasks
-- **Sprint Planning Assistant** - AI helps optimize sprint capacity
+- **Autonomous Runners** - Headless Claude Code / Codex / OpenCode dispatch for `auto_handle` issues — opens PRs without human babysitting. See [runner/README.md](runner/README.md).
 
 ### GitHub App Integration (NEW!)
 - **Automatic PR Reviews** - Claude reviews every pull request
@@ -81,6 +81,21 @@ LLM (Claude/AI) → Lineary (Tasks) → Git (Code) → Claude Review → Lineary
 - **REST API** - Comprehensive API for automation
 - **Webhooks** - Real-time event notifications
 - **CLI Tool** - Command-line interface for power users
+- **Runner Daemon** - Node 18+ binary (no npm deps) that long-polls Lineary and executes coding agents in a scratch git worktree. Ship autonomous bug-fix loops end-to-end.
+
+## 🤖 Autonomous Dispatch (Runners)
+
+Flag any issue with `auto_handle=true` and a **registered runner** on your laptop/homelab/NAS will:
+
+1. Long-poll Lineary for pending dispatches (outbound HTTPS, no inbound ports).
+2. `git worktree add` a new branch in your project clone.
+3. Spawn headless **Claude Code** (`claude -p`), **Codex** (`codex exec`), or **OpenCode** (`opencode run`) with the issue body as the prompt.
+4. Stream stdout live into the issue detail view (SSE).
+5. `git push` + `gh pr create` on success — your existing CI runs and the GitHub ↔ Lineary sync closes the issue when it passes.
+
+Wire a CI workflow failure to auto-create an `auto_handle` issue (`.github/workflows/ci-to-lineary.yml`) and you have a self-healing loop: red build → issue → runner → PR → green.
+
+**Install**: Account → Runners → Register → paste `~/.lineary/runner.json` → `node runner/lineary-runner.js`. Full docs in [runner/README.md](runner/README.md).
 
 ## 🏃 Quick Start
 

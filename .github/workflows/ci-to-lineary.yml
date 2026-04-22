@@ -1,0 +1,60 @@
+name: CI → Lineary
+
+# On any workflow failure on development or production, create a Lineary issue
+# flagged auto_handle=true so a registered runner can pick it up and open a
+# fix PR. Re-running succeeds → existing GitHub sync closes the issue.
+
+on:
+  workflow_run:
+    workflows: ['*']
+    types: [completed]
+    branches: [development, production]
+
+jobs:
+  report-failure:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Collect failure context
+        id: ctx
+        run: |
+          RUN_URL="${{ github.event.workflow_run.html_url }}"
+          WORKFLOW="${{ github.event.workflow_run.name }}"
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          echo "title=CI failure: ${WORKFLOW} on ${BRANCH} (${SHA:0:7})" >> $GITHUB_OUTPUT
+          {
+            echo 'body<<EOF'
+            echo "Workflow **${WORKFLOW}** failed on \`${BRANCH}\`."
+            echo ""
+            echo "- Commit: \`${SHA}\`"
+            echo "- Run: ${RUN_URL}"
+            echo ""
+            echo "Investigate the failing job, propose a fix, open a PR targeting \`${BRANCH}\`."
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Create Lineary issue (auto_handle)
+        env:
+          LINEARY_API_URL: ${{ secrets.LINEARY_API_URL }}
+          LINEARY_API_KEY: ${{ secrets.LINEARY_API_KEY }}
+          LINEARY_PROJECT_ID: ${{ secrets.LINEARY_PROJECT_ID }}
+        run: |
+          if [ -z "$LINEARY_API_URL" ] || [ -z "$LINEARY_API_KEY" ] || [ -z "$LINEARY_PROJECT_ID" ]; then
+            echo "Lineary secrets missing; skipping."
+            exit 0
+          fi
+          curl -sS -X POST "$LINEARY_API_URL/api/issues" \
+            -H "X-API-Key: $LINEARY_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @- <<JSON
+          {
+            "project_id": "$LINEARY_PROJECT_ID",
+            "title": $(jq -Rsc . <<< "${{ steps.ctx.outputs.title }}"),
+            "description": $(jq -Rsc . <<< "${{ steps.ctx.outputs.body }}"),
+            "status": "todo",
+            "priority": 2,
+            "auto_handle": true,
+            "runner_preference": "any"
+          }
+          JSON

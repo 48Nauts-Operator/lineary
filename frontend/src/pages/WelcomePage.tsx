@@ -39,7 +39,7 @@ export function WelcomePage({ kit, onDone }: Props) {
   );
 
   return (
-    <div className="min-h-screen bg-[#0D0E12] text-gray-100">
+    <div className="min-h-screen bg-[#23252C] text-gray-100">
       <div className="mx-auto max-w-[760px] px-6 py-16">
         <header className="mb-12">
           <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
@@ -59,8 +59,8 @@ export function WelcomePage({ kit, onDone }: Props) {
           title="Your starter project"
           detail="Empty by design — it's a sandbox. Rename or delete it whenever you like."
         >
-          <div className="flex items-center gap-3 rounded-lg border border-gray-800 bg-[#12141B] p-4">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#9B8CFF] text-[16px] font-bold text-[#0D0E12]">
+          <div className="flex items-center gap-3 rounded-lg border border-gray-800 bg-[#2B2D36] p-4">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#F59E0B] text-[16px] font-bold text-[#23252C]">
               M
             </div>
             <div className="flex flex-1 flex-col">
@@ -76,13 +76,13 @@ export function WelcomePage({ kit, onDone }: Props) {
           title="Your first API key"
           detail="Shown once — never stored in plaintext. Copy it now; you can always mint more in Account later."
         >
-          <div className="flex items-center gap-3 rounded-lg border border-[#3A2F4E] bg-[#1A132A] p-4">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A8FF" strokeWidth="2" className="flex-shrink-0">
+          <div className="flex items-center gap-3 rounded-lg border border-[#4A3A1E] bg-[#2A1F14] p-4">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2" className="flex-shrink-0">
               <circle cx="12" cy="16" r="1" />
               <rect x="3" y="10" width="18" height="12" rx="2" />
               <path d="M7 10V7a5 5 0 0110 0v3" />
             </svg>
-            <code className="flex-1 break-all font-mono text-[13px] text-[#C8A8FF]">{kit.api_key.raw}</code>
+            <code className="flex-1 break-all font-mono text-[13px] text-[#FBBF24]">{kit.api_key.raw}</code>
             <CopyBtn value={kit.api_key.raw} label="Copy key" primary />
           </div>
         </Section>
@@ -98,12 +98,12 @@ export function WelcomePage({ kit, onDone }: Props) {
           }
         >
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3 rounded-lg border border-gray-800 bg-[#12141B] p-4">
+            <div className="flex items-center gap-3 rounded-lg border border-gray-800 bg-[#2B2D36] p-4">
               <div className="flex-1">
                 <div className="mb-1 text-[12px] text-gray-400">
                   <span className="font-mono text-gray-500">~/Library/Application Support/Claude/claude_desktop_config.json</span>
                 </div>
-                <pre className="overflow-auto rounded bg-[#0D0E12] p-3 font-mono text-[12px] leading-[18px] text-gray-300">
+                <pre className="overflow-auto rounded bg-[#23252C] p-3 font-mono text-[12px] leading-[18px] text-gray-300">
 {mcpConfig}
                 </pre>
               </div>
@@ -124,7 +124,7 @@ export function WelcomePage({ kit, onDone }: Props) {
           </div>
           <button
             onClick={onDone}
-            className="rounded-md bg-[#7B61FF] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-[#8B71FF]"
+            className="rounded-md bg-[#C2410C] px-6 py-2.5 text-[13px] font-semibold text-white hover:bg-[#D97706]"
           >
             Open Lineary →
           </button>
@@ -173,7 +173,7 @@ function CopyBtn({ value, label, primary }: { value: string; label: string; prim
       }}
       className={`flex-shrink-0 rounded-md px-3 py-1.5 text-[12px] font-medium ${
         primary
-          ? 'bg-[#7B61FF] text-white hover:bg-[#8B71FF]'
+          ? 'bg-[#C2410C] text-white hover:bg-[#D97706]'
           : 'border border-gray-800 text-gray-300 hover:bg-gray-800'
       }`}
     >

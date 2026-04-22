@@ -2,32 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Brand tokens ──────────────────────────────────────────────
+   Primary = orange (warm). Accent = mint (glowing). The brand
+   gradient moves orange → mint; background is a subtle gray wash.
+*/
+:root {
+  --brand-primary: #C2410C;       /* orange-700, dirty/burnt */
+  --brand-primary-hover: #D97706; /* amber-600 */
+  --brand-primary-soft: #FDBA74;  /* orange-300 */
+  --brand-accent: #5EEAD4;        /* teal-300, glowing mint */
+  --brand-accent-soft: #99F6E4;   /* teal-200 */
+  --brand-gradient: linear-gradient(135deg, #C2410C 0%, #5EEAD4 100%);
+
+  --bg-top: #23252C;
+  --bg-bottom: #2F323C;
+  --bg-surface: #272931;
+  --bg-elevated: #2B2D36;
+  --bg-hover: #32343E;
+  --border-subtle: #3A3D47;
+  --border-muted: #292B34;
+}
+
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    color-scheme: dark;
   }
-  
+
   body {
-    @apply text-gray-900 antialiased;
+    @apply antialiased;
+    color: #E8E8ED;
+    /* The html-level gradient (in index.html) provides the fixed wash.
+       Body stays transparent so the gradient is visible everywhere. */
+    background: transparent;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
-  
-  /* Custom scrollbar */
+
+  /* Dark scrollbar to match the rest of the UI */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+    background: transparent;
   }
-  
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full;
+    background: #2A2D3A;
+    border-radius: 9999px;
   }
-  
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
+    background: #3A3D4E;
   }
 }
 
@@ -41,7 +65,7 @@
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-betty-600 via-purple-600 to-pink-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-orange-400 via-orange-300 to-teal-300 bg-clip-text text-transparent;
   }
   
   .metric-card {
