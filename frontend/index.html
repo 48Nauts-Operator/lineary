@@ -8,9 +8,15 @@
     <meta name="description" content="Project management, rebuilt for AI. Harness AI to ship faster and smarter.">
     <style>
       /* Prevent flash of unstyled content */
-      body {
-        background: #111827;
+      html, body {
         min-height: 100vh;
+        /* Background = subtle gray wash, darker at top, slightly lighter at
+           the bottom. Fixed so it doesn't repeat on scroll. */
+        /* Zed One Dark-inspired slate. Warmer + lighter than a pure-black
+           gradient; reads as "graphite" instead of "abyss". */
+        background:
+          linear-gradient(180deg, #23252C 0%, #292B34 50%, #2F323C 100%)
+          fixed;
       }
     </style>
   </head>

@@ -30,7 +30,7 @@ const STATUS_LANES: Record<string, { bg: string; fg: string; border: string; dot
   backlog: { bg: 'transparent', fg: '#878A98', border: '#5A5D6E', dot: 'transparent', label: 'Backlog' },
   todo: { bg: 'transparent', fg: '#878A98', border: '#5A5D6E', dot: 'transparent', label: 'To do' },
   in_progress: { bg: '#1F2A3A', fg: '#9FBCE8', border: '#253446', dot: '#6EA0F5', label: 'In progress' },
-  in_review: { bg: '#2A1F3E', fg: '#C8A8FF', border: '#3A2F4E', dot: '#9B8CFF', label: 'In review' },
+  in_review: { bg: '#3A2F1E', fg: '#FBBF24', border: '#4A3A1E', dot: '#F59E0B', label: 'In review' },
   done: { bg: '#1F2E1F', fg: '#7FD38E', border: '#2F4A2F', dot: '#34D399', label: 'Done' },
   cancelled: { bg: '#2A1F1F', fg: '#E88888', border: '#3A2828', dot: '#F87171', label: 'Cancelled' },
 };
@@ -108,16 +108,16 @@ export function ProjectDashboard({ project, issues, onOpenIssue, onBack }: Props
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-[16px] font-bold text-[#0D0E12]"
-            style={{ background: project.color || '#8B5CF6' }}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-[16px] font-bold text-[#23252C]"
+            style={{ background: project.color || '#C2410C' }}
           >
             {project.name.slice(0, 1).toUpperCase()}
           </div>
           <h1 className="text-[26px] font-semibold tracking-tight text-gray-50">{project.name}</h1>
           {project.mode === 'github' ? <GitHubSyncBadge projectId={project.id} /> : null}
           {project.mode === 'mcp_only' ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-800 bg-[#12141B] px-2.5 py-1 text-[11px] text-gray-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#9B8CFF]" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-800 bg-[#2B2D36] px-2.5 py-1 text-[11px] text-gray-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
               MCP only — no repo sync
             </span>
           ) : null}
@@ -133,11 +133,17 @@ export function ProjectDashboard({ project, issues, onOpenIssue, onBack }: Props
       </div>
 
       {/* Pulse */}
-      <ProjectPulse projectId={project.id} />
+      <ProjectPulse
+        projectId={project.id}
+        onOpenIssue={(issueId) => {
+          const match = issues.find((i) => i.id === issueId);
+          if (match) onOpenIssue(match);
+        }}
+      />
 
       {/* Issues list */}
       <div className="mt-2 flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-5 border-b border-gray-800 pb-3">
+        <div className="flex flex-wrap items-center gap-5 border-b border-[#C2410C]/20 pb-3">
           <TabBtn label="All issues" count={issues.length} active={filter === 'all'} onClick={() => setFilter('all')} />
           <TabBtn label="Open" count={counts.open} active={filter === 'open'} onClick={() => setFilter('open')} />
           <TabBtn
@@ -148,13 +154,13 @@ export function ProjectDashboard({ project, issues, onOpenIssue, onBack }: Props
           />
           <TabBtn label="Done" count={counts.done} active={filter === 'done'} onClick={() => setFilter('done')} />
           <div className="flex-1" />
-          <label className="flex items-center gap-2 rounded-md border border-gray-800 px-2.5 py-1 text-[12px] text-gray-400">
+          <label className="flex items-center gap-2 rounded-md border border-[#C2410C]/40 bg-[#2B2D36]/60 px-3 py-1.5 text-[12px] text-[#FDBA74] focus-within:border-[#C2410C] focus-within:ring-1 focus-within:ring-[#C2410C]/40">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4-4" />
             </svg>
             <input
-              className="w-[180px] bg-transparent text-gray-200 placeholder-gray-600 focus:outline-none"
+              className="w-[180px] bg-transparent text-gray-100 placeholder-[#FDBA74]/50 focus:outline-none"
               placeholder="Search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -252,13 +258,13 @@ function ReleasesPanel({ projectId }: { projectId: string }) {
       {loading ? (
         <div className="py-6 text-center text-sm text-gray-500">Loading…</div>
       ) : releases.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-800 bg-[#0F1117] p-6 text-center text-[12px] text-gray-500">
+        <div className="rounded-lg border border-dashed border-gray-800 bg-[#272931] p-6 text-center text-[12px] text-gray-500">
           No releases yet. Click Auto-draft when you want to stamp a slice of merged work as a release.
         </div>
       ) : (
         <div className="flex flex-col gap-2">
           {releases.map((rel) => (
-            <div key={rel.id} className="rounded-lg border border-gray-800 bg-[#12141B]">
+            <div key={rel.id} className="rounded-lg border border-gray-800 bg-[#2B2D36]">
               <button
                 onClick={() => setExpanded(expanded === rel.id ? null : rel.id)}
                 className="flex w-full items-center gap-3 px-4 py-3 text-left"
@@ -267,13 +273,13 @@ function ReleasesPanel({ projectId }: { projectId: string }) {
                   className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
                     rel.status === 'published'
                       ? 'border-[#2F4A2F] bg-[#1F2E1F] text-[#7FD38E]'
-                      : 'border-gray-800 bg-[#1A1D28] text-gray-400'
+                      : 'border-gray-800 bg-[#32343E] text-gray-400'
                   }`}
                 >
                   {rel.status}
                 </span>
                 <span className="text-[13px] font-medium text-gray-200">{rel.name}</span>
-                {rel.tag ? <span className="font-mono text-[12px] text-[#9B8CFF]">{rel.tag}</span> : null}
+                {rel.tag ? <span className="font-mono text-[12px] text-[#F59E0B]">{rel.tag}</span> : null}
                 <span className="ml-auto flex items-center gap-3 text-[11px] text-gray-500">
                   {rel.pr_numbers && rel.pr_numbers.length > 0 ? (
                     <span>
@@ -366,7 +372,7 @@ function AutonomyPanel({ projectId }: { projectId: string }) {
         {rules.map((rule) => (
           <div
             key={rule.key}
-            className="flex items-center gap-4 rounded-lg border border-gray-800 bg-[#12141B] px-4 py-3"
+            className="flex items-center gap-4 rounded-lg border border-gray-800 bg-[#2B2D36] px-4 py-3"
           >
             <div className="flex flex-1 flex-col gap-0.5">
               <span className="text-[13px] font-medium text-gray-200">{rule.label}</span>
@@ -404,7 +410,7 @@ function Stat({ value, label }: { value: number; label: string }) {
 }
 
 function Sparkline({ values, max }: { values: number[]; max: number }) {
-  const colors = ['#5A5D6E', '#393E54', '#393E54', '#6EA0F5', '#393E54', '#9B8CFF', '#393E54', '#4ADE80', '#393E54', '#C084FC', '#393E54', '#6EA0F5', '#393E54', '#5A5D6E'];
+  const colors = ['#5A5D6E', '#393E54', '#393E54', '#6EA0F5', '#393E54', '#F59E0B', '#393E54', '#4ADE80', '#393E54', '#F59E0B', '#393E54', '#6EA0F5', '#393E54', '#5A5D6E'];
   return (
     <div className="flex items-end gap-[2px]" title="Activity — last 7 days">
       {values.map((v, i) => (
@@ -413,7 +419,7 @@ function Sparkline({ values, max }: { values: number[]; max: number }) {
           className="w-[3px] rounded-[1px]"
           style={{
             height: `${Math.max(4, (v / max) * 30)}px`,
-            background: v === 0 ? '#262832' : colors[i % colors.length],
+            background: v === 0 ? '#3A3D47' : colors[i % colors.length],
           }}
         />
       ))}
@@ -435,11 +441,11 @@ function TabBtn({
   return (
     <button
       onClick={onClick}
-      className={`text-[13px] font-medium ${active ? 'text-gray-100' : 'text-gray-500 hover:text-gray-300'}`}
+      className={`text-[13px] font-medium ${active ? 'text-gray-50' : 'text-gray-400 hover:text-gray-200'}`}
     >
       {label}
       {typeof count === 'number' ? (
-        <span className={`ml-1.5 ${active ? 'text-gray-500' : 'text-gray-700'}`}>{count}</span>
+        <span className={`ml-1.5 font-mono text-[12px] ${active ? 'text-[#FDBA74]' : 'text-[#FDBA74]/50'}`}>{count}</span>
       ) : null}
     </button>
   );
@@ -456,7 +462,7 @@ function IssueRow({ issue, onClick }: { issue: Issue; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3.5 border-b border-gray-800/70 py-3 text-left hover:bg-gray-900/30"
+      className="flex items-center gap-3.5 border-b border-[#C2410C]/15 py-3 text-left hover:bg-[#C2410C]/5"
     >
       <div className="flex w-6 flex-shrink-0 justify-center">
         <StatusDot status={issue.status} />
@@ -469,7 +475,7 @@ function IssueRow({ issue, onClick }: { issue: Issue; onClick: () => void }) {
       <div className={`flex flex-1 items-center gap-2 overflow-hidden ${strike ? 'text-gray-500 line-through' : 'text-gray-200'}`}>
         <span className="truncate text-[14px] font-medium">{issue.title}</span>
         {(issue as any).source === 'agent' || (issue as any).created_by_agent ? (
-          <span className="inline-block flex-shrink-0 rounded border border-gray-800 bg-[#1A1D28] px-1.5 py-[1px] text-[10px] font-semibold uppercase tracking-wider text-[#9B8CFF]">
+          <span className="inline-block flex-shrink-0 rounded border border-gray-800 bg-[#32343E] px-1.5 py-[1px] text-[10px] font-semibold uppercase tracking-wider text-[#F59E0B]">
             Agent
           </span>
         ) : null}
@@ -483,10 +489,10 @@ function IssueRow({ issue, onClick }: { issue: Issue; onClick: () => void }) {
             GH#{gh}
           </span>
         ) : isMcpOnly ? (
-          <span className="text-[11px] italic text-gray-700">MCP only</span>
+          <span className="text-[11px] italic text-[#FDBA74]/80">MCP only</span>
         ) : null}
       </div>
-      <div className="w-[60px] flex-shrink-0 text-right font-mono text-[11px] text-gray-600">{rel(issue.created_at)}</div>
+      <div className="w-[60px] flex-shrink-0 text-right font-mono text-[11px] text-[#FDBA74]/60">{rel(issue.created_at)}</div>
     </button>
   );
 }

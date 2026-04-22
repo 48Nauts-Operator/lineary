@@ -125,7 +125,7 @@ export function ReviewPage() {
               : `All clear. Agents will flag anything that needs your call.`}
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-gray-800 bg-[#12141B] p-1">
+        <div className="flex items-center gap-1 rounded-lg border border-gray-800 bg-[#2B2D36] p-1">
           {(['all', 'urgent', 'mine'] as const).map((k) => (
             <button
               key={k}
@@ -161,7 +161,7 @@ export function ReviewPage() {
 function LiveStrip({ sessions, autoApplied24h }: { sessions: Session[]; autoApplied24h: number }) {
   const active = sessions.filter((s) => s.status !== 'finished');
   return (
-    <div className="-mx-4 mb-10 flex items-center gap-5 overflow-hidden border-b border-gray-800 bg-[#0F1117] px-6 py-2.5">
+    <div className="-mx-4 mb-10 flex items-center gap-5 overflow-hidden border-b border-gray-800 bg-[#272931] px-6 py-2.5">
       <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-600">Live</span>
       {active.length === 0 ? (
         <span className="text-[12px] text-gray-600">No agents active right now.</span>
@@ -181,7 +181,7 @@ function LiveStrip({ sessions, autoApplied24h }: { sessions: Session[]; autoAppl
             <span className="text-[12px] font-medium text-gray-300">{s.agent_name || s.agent_slug}</span>
             <span className="text-[12px] text-gray-500">{s.current_task || s.status}</span>
             {s.current_target ? (
-              <span className="font-mono text-[12px] text-[#9B8CFF]">{s.current_target}</span>
+              <span className="font-mono text-[12px] text-[#F59E0B]">{s.current_target}</span>
             ) : null}
             <span className="font-mono text-[11px] text-gray-600">{rel(s.last_seen_at)}</span>
           </div>
@@ -310,16 +310,16 @@ function MergeCard({
   const urgent = p.urgency === 'urgent';
   const pr = (p.payload as any) || {};
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-800 bg-[#12141B]">
+    <div className="overflow-hidden rounded-xl border border-gray-800 bg-[#2B2D36]">
       <div
         className="flex items-center gap-3 border-b border-gray-800 px-5 py-3"
-        style={{ background: urgent ? 'linear-gradient(90deg,#2A1F15 0%,#12141B 60%)' : undefined }}
+        style={{ background: urgent ? 'linear-gradient(90deg,#2A1F15 0%,#2B2D36 60%)' : undefined }}
       >
         <div
           className="h-1.5 w-1.5 rounded-full"
-          style={{ background: urgent ? '#F87171' : '#9B8CFF', boxShadow: urgent ? '0 0 6px rgba(248,113,113,0.5)' : undefined }}
+          style={{ background: urgent ? '#F87171' : '#F59E0B', boxShadow: urgent ? '0 0 6px rgba(248,113,113,0.5)' : undefined }}
         />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: urgent ? '#F87171' : '#9B8CFF' }}>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: urgent ? '#F87171' : '#F59E0B' }}>
           {urgent ? 'Urgent · needs approval' : 'Needs approval'}
         </span>
         <span className="text-[12px] text-gray-500">
@@ -337,9 +337,9 @@ function MergeCard({
         </div>
 
         {pr.pr_number || p.issue_title ? (
-          <div className="flex items-center gap-2.5 rounded-lg border border-gray-800 bg-[#0F1117] p-3.5">
+          <div className="flex items-center gap-2.5 rounded-lg border border-gray-800 bg-[#272931] p-3.5">
             {pr.pr_number ? (
-              <span className="font-mono text-sm font-medium text-[#9B8CFF]">#{pr.pr_number}</span>
+              <span className="font-mono text-sm font-medium text-[#F59E0B]">#{pr.pr_number}</span>
             ) : null}
             <span className="text-sm font-medium text-gray-200">{pr.title || p.issue_title}</span>
             {pr.diff_stats ? (
@@ -351,7 +351,7 @@ function MergeCard({
         {p.reasoning ? <div className="text-[13px] leading-5 text-gray-300">"{p.reasoning}"</div> : null}
       </div>
 
-      <div className="flex items-center gap-2.5 border-t border-gray-800 bg-[#0F1117] px-5 py-3">
+      <div className="flex items-center gap-2.5 border-t border-gray-800 bg-[#272931] px-5 py-3">
         <Btn>Read reasoning</Btn>
         <div className="ml-auto" />
         <Btn onClick={() => onAct(p.id, 'intervene')}>Intervene</Btn>
@@ -372,13 +372,13 @@ function AskCard({
 }) {
   const options = ((p.payload as any)?.options as string[]) || [];
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-800 bg-[#12141B]">
+    <div className="overflow-hidden rounded-xl border border-gray-800 bg-[#2B2D36]">
       <div
         className="flex items-center gap-3 border-b border-gray-800 px-5 py-3"
-        style={{ background: 'linear-gradient(90deg,#2D1F15 0%,#12141B 60%)' }}
+        style={{ background: 'linear-gradient(90deg,#2D1F15 0%,#2B2D36 60%)' }}
       >
-        <div className="h-1.5 w-1.5 rounded-full" style={{ background: '#F97316', boxShadow: '0 0 6px rgba(249,115,22,0.5)' }} />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#F97316]">
+        <div className="h-1.5 w-1.5 rounded-full" style={{ background: '#C2410C', boxShadow: '0 0 6px rgba(249,115,22,0.5)' }} />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#C2410C]">
           Agent paused · needs your input
         </span>
         <span className="ml-auto font-mono text-[11px] text-gray-500">{rel(p.created_at)} waiting</span>
@@ -393,18 +393,18 @@ function AskCard({
           </span>
         </div>
         {p.reasoning ? (
-          <div className="rounded-r-lg border-l-2 border-[#F97316] bg-[#0F1117] p-4 text-[14px] leading-[22px] text-gray-200">
+          <div className="rounded-r-lg border-l-2 border-[#C2410C] bg-[#272931] p-4 text-[14px] leading-[22px] text-gray-200">
             "{p.reasoning}"
           </div>
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-gray-800 bg-[#0F1117] px-5 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-t border-gray-800 bg-[#272931] px-5 py-3">
         {options.slice(0, 3).map((opt) => (
           <button
             key={opt}
             onClick={() => onAct(p.id, 'intervene', opt)}
-            className="rounded-md border border-gray-700 bg-[#1D1F28] px-3.5 py-1.5 text-[12px] font-medium text-gray-100 hover:bg-[#232636]"
+            className="rounded-md border border-gray-700 bg-[#2F3139] px-3.5 py-1.5 text-[12px] font-medium text-gray-100 hover:bg-[#232636]"
           >
             {opt}
           </button>
@@ -439,10 +439,10 @@ function SplitCard({
   const subIssues = ((p.payload as any)?.sub_issues as { title: string; hint?: string }[]) || [];
   const auto = p.auto_approve_at ? untilFn(p.auto_approve_at) : null;
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-800 bg-[#12141B]">
+    <div className="overflow-hidden rounded-xl border border-gray-800 bg-[#2B2D36]">
       <div className="flex items-center gap-3 border-b border-gray-800 px-5 py-3">
-        <div className="h-1.5 w-1.5 rounded-full bg-[#9B8CFF]" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9B8CFF]">Planning · low risk</span>
+        <div className="h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#F59E0B]">Planning · low risk</span>
         {auto ? <span className="text-[12px] text-gray-500">Will be auto-approved in {auto} unless you intervene</span> : null}
         <span className="ml-auto font-mono text-[11px] text-gray-500">{rel(p.created_at)} waiting</span>
       </div>
@@ -455,7 +455,7 @@ function SplitCard({
         </div>
         {p.reasoning ? <div className="text-[13px] leading-5 text-gray-300">"{p.reasoning}"</div> : null}
         {subIssues.length > 0 ? (
-          <div className="flex flex-col rounded-lg border border-gray-800 bg-[#0F1117] p-3">
+          <div className="flex flex-col rounded-lg border border-gray-800 bg-[#272931] p-3">
             {subIssues.map((s, i) => (
               <div
                 key={i}
@@ -469,12 +469,12 @@ function SplitCard({
           </div>
         ) : null}
       </div>
-      <div className="flex items-center gap-2.5 border-t border-gray-800 bg-[#0F1117] px-5 py-3">
+      <div className="flex items-center gap-2.5 border-t border-gray-800 bg-[#272931] px-5 py-3">
         <Btn>Preview full spec</Btn>
         <div className="ml-auto" />
         <Btn onClick={() => onAct(p.id, 'intervene', 'keep_as_one')}>Keep as one</Btn>
         <Btn onClick={() => onAct(p.id, 'intervene')}>Intervene</Btn>
-        <BtnPrimary onClick={() => onAct(p.id, 'approve')} accent="#C8A8FF">
+        <BtnPrimary onClick={() => onAct(p.id, 'approve')} accent="#FBBF24">
           Approve split
         </BtnPrimary>
       </div>
@@ -490,7 +490,7 @@ function CompactCard({
   onAct: (id: string, action: 'approve' | 'intervene', response?: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-gray-800 bg-[#12141B] px-5 py-4">
+    <div className="flex items-center gap-4 rounded-xl border border-gray-800 bg-[#2B2D36] px-5 py-4">
       <div
         className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
         style={{
@@ -509,7 +509,7 @@ function CompactCard({
             </span>
           ) : null}
           <span className="text-gray-500">{verb(p)}</span>
-          {targetLabel(p) ? <span className="font-mono text-[12px] font-medium text-[#9B8CFF]">{targetLabel(p)}</span> : null}
+          {targetLabel(p) ? <span className="font-mono text-[12px] font-medium text-[#F59E0B]">{targetLabel(p)}</span> : null}
           {p.issue_title ? <span className="text-gray-300">{p.issue_title}</span> : null}
         </div>
         {p.reasoning ? <div className="text-[12px] leading-[18px] text-gray-500">{p.reasoning}</div> : null}
@@ -553,7 +553,7 @@ function BtnPrimary({ children, onClick, accent }: { children: React.ReactNode; 
 
 function EmptyState() {
   return (
-    <div className="rounded-xl border border-dashed border-gray-800 bg-[#0F1117] p-14 text-center">
+    <div className="rounded-xl border border-dashed border-gray-800 bg-[#272931] p-14 text-center">
       <div className="mb-2 text-sm text-gray-400">All clear.</div>
       <div className="text-[12px] text-gray-600">
         Agents are working. You'll see a proposal here when they need your call — merges, splits, or questions.

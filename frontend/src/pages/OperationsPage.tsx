@@ -56,7 +56,7 @@ export function OperationsPage() {
             What the tool has been doing for you. Not team velocity — that was the old world.
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-gray-800 bg-[#12141B] p-1">
+        <div className="flex items-center gap-1 rounded-lg border border-gray-800 bg-[#2B2D36] p-1">
           {([7, 30] as const).map((d) => (
             <button
               key={d}
@@ -105,7 +105,7 @@ export function OperationsPage() {
             <Metric label="PRs merged" value={summary.prs_merged} big />
           </div>
 
-          <section className="rounded-xl border border-gray-800 bg-[#12141B] p-5">
+          <section className="rounded-xl border border-gray-800 bg-[#2B2D36] p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-[14px] font-semibold text-gray-200">Activity by day</h2>
               <Legend />
@@ -137,9 +137,9 @@ function Metric({
   big?: boolean;
 }) {
   const color =
-    tone === 'good' ? '#7FD38E' : tone === 'warn' ? '#F97316' : '#F3F3F7';
+    tone === 'good' ? '#7FD38E' : tone === 'warn' ? '#C2410C' : '#F3F3F7';
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-gray-800 bg-[#12141B] p-5">
+    <div className="flex flex-col gap-1.5 rounded-xl border border-gray-800 bg-[#2B2D36] p-5">
       <span
         className="font-semibold tracking-tight"
         style={{ color, fontSize: big ? '36px' : '26px' }}
@@ -159,10 +159,10 @@ function Legend() {
         <span className="inline-block h-2 w-2 rounded-sm bg-[#4ADE80]" /> approved
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="inline-block h-2 w-2 rounded-sm bg-[#F97316]" /> intervened
+        <span className="inline-block h-2 w-2 rounded-sm bg-[#C2410C]" /> intervened
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="inline-block h-2 w-2 rounded-sm bg-[#C084FC]" /> merges
+        <span className="inline-block h-2 w-2 rounded-sm bg-[#F59E0B]" /> merges
       </span>
     </div>
   );
@@ -181,10 +181,10 @@ function DailyBars({ series }: { series: SeriesDay[] }) {
         return (
           <div key={d.day} title={`${d.day} — ${total} events`} className="flex w-full flex-1 flex-col items-center gap-1">
             <div className="flex w-full flex-col items-stretch gap-[1px]" style={{ height: '80px', justifyContent: 'flex-end' }}>
-              {d.merges > 0 ? <div style={{ height: h(d.merges), background: '#C084FC', borderRadius: '1px' }} /> : null}
-              {d.interventions > 0 ? <div style={{ height: h(d.interventions), background: '#F97316', borderRadius: '1px' }} /> : null}
+              {d.merges > 0 ? <div style={{ height: h(d.merges), background: '#F59E0B', borderRadius: '1px' }} /> : null}
+              {d.interventions > 0 ? <div style={{ height: h(d.interventions), background: '#C2410C', borderRadius: '1px' }} /> : null}
               {d.approvals > 0 ? <div style={{ height: h(d.approvals), background: '#4ADE80', borderRadius: '1px' }} /> : null}
-              {total === 0 ? <div style={{ height: '2px', background: '#262832' }} /> : null}
+              {total === 0 ? <div style={{ height: '2px', background: '#3A3D47' }} /> : null}
             </div>
             <span className="font-mono text-[9px] text-gray-700">{d.day.slice(5)}</span>
           </div>

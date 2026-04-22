@@ -94,7 +94,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showNewProjectForm, setShowNewProjectForm] = useState(false)
-  const [newProject, setNewProject] = useState({ name: '', description: '', color: '#8B5CF6' })
+  const [newProject, setNewProject] = useState({ name: '', description: '', color: '#C2410C' })
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null)
   const [showIssueDetail, setShowIssueDetail] = useState(false)
   const [modeDialogFor, setModeDialogFor] = useState<Project | null>(null)
@@ -152,7 +152,7 @@ const App: React.FC = () => {
       setProjects([response.data, ...projects])
       setSelectedProject(response.data)
       setShowNewProjectForm(false)
-      setNewProject({ name: '', description: '', color: '#8B5CF6' })
+      setNewProject({ name: '', description: '', color: '#C2410C' })
       // Prompt the user to pick project mode immediately after creation.
       setModeDialogFor(response.data)
     } catch (error) {
@@ -199,7 +199,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-600 mx-auto"></div>
           <h2 className="text-xl font-semibold text-white mt-4">Loading Lineary...</h2>
         </div>
       </div>
@@ -221,13 +221,13 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700">
+    <div className="min-h-screen text-white">
+      {/* Header — transparent so the page gradient bleeds through, with a subtle bottom border */}
+      <header className="bg-black/20 backdrop-blur-sm border-b border-white/5">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-teal-300 bg-clip-text text-transparent">
                 Lineary
               </h1>
               <span className="text-sm text-gray-400">Project management, rebuilt for AI</span>
@@ -260,7 +260,7 @@ const App: React.FC = () => {
                 onClick={() => setActiveTab(tab)}
                 className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors capitalize ${
                   activeTab === tab
-                    ? 'border-purple-500 text-purple-400'
+                    ? 'border-orange-600 text-orange-500'
                     : 'border-transparent text-gray-400 hover:text-white'
                 }`}
               >
@@ -295,27 +295,27 @@ const App: React.FC = () => {
               <h2 className="text-xl font-semibold">Projects</h2>
               <button
                 onClick={() => setShowNewProjectForm(true)}
-                className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="bg-orange-700 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 + New Project
               </button>
             </div>
             
             {showNewProjectForm && (
-              <div className="bg-gray-800 rounded-lg p-6 border border-purple-500 mb-6">
+              <div className="bg-gray-800 rounded-lg p-6 border border-orange-600 mb-6">
                 <h3 className="text-lg font-semibold mb-4">Create New Project</h3>
                 <div className="space-y-4">
                   <input
                     type="text"
                     value={newProject.name}
                     onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-orange-600"
                     placeholder="Project name"
                   />
                   <textarea
                     value={newProject.description}
                     onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-orange-600"
                     placeholder="Description"
                     rows={3}
                   />
@@ -328,7 +328,7 @@ const App: React.FC = () => {
                     </button>
                     <button
                       onClick={createProject}
-                      className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      className="bg-orange-700 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
                       Create Project
                     </button>
@@ -345,7 +345,7 @@ const App: React.FC = () => {
                     setSelectedProject(project)
                     setActiveTab('projects')
                   }}
-                  className={`bg-gray-800 rounded-lg p-6 border transition-all hover:shadow-lg relative group border-gray-700 hover:border-purple-500`}
+                  className={`bg-gray-800 rounded-lg p-6 border transition-all hover:shadow-lg relative group border-gray-700 hover:border-orange-600`}
                 >
                   {/* Delete button */}
                   <button
@@ -368,10 +368,10 @@ const App: React.FC = () => {
                       setSelectedProject(project)
                       setActiveTab('projects')
                     }}
-                    className="absolute top-2 right-10 opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-purple-600/20 rounded-lg"
+                    className="absolute top-2 right-10 opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-orange-700/20 rounded-lg"
                     title="Project settings"
                   >
-                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>

@@ -81,7 +81,7 @@ export function AgentsPage() {
       {loading ? (
         <div className="py-14 text-center text-sm text-gray-500">Loading…</div>
       ) : agents.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-800 bg-[#0F1117] p-14 text-center">
+        <div className="rounded-xl border border-dashed border-gray-800 bg-[#272931] p-14 text-center">
           <div className="mb-2 text-sm text-gray-300">No agents yet.</div>
           <div className="text-[12px] text-gray-500">
             Point an agent's <span className="font-mono text-gray-400">LINEARY_API_KEY</span> at this instance and have it call{' '}
@@ -115,7 +115,7 @@ function AgentRow({
 }) {
   const color = agent.color || '#6EA0F5';
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-gray-800 bg-[#12141B] px-5 py-4">
+    <div className="flex items-center gap-4 rounded-xl border border-gray-800 bg-[#2B2D36] px-5 py-4">
       <div
         className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg"
         style={{ background: `${color}22`, border: `1px solid ${color}55` }}
@@ -141,7 +141,7 @@ function AgentRow({
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 5px ${color}80` }} />
               <span>{session.current_task || session.status}</span>
               {session.current_target ? (
-                <span className="font-mono text-[#9B8CFF]">{session.current_target}</span>
+                <span className="font-mono text-[#F59E0B]">{session.current_target}</span>
               ) : null}
             </>
           ) : (

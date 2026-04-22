@@ -233,7 +233,7 @@ This documentation will help you understand and work with ${localSelectedProject
               const project = projects.find(p => p.id === e.target.value)
               setLocalSelectedProject(project || null)
             }}
-            className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+            className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-orange-600 focus:outline-none"
           >
             <option value="">Select Project</option>
             {projects.map(project => (
@@ -251,7 +251,7 @@ This documentation will help you understand and work with ${localSelectedProject
             placeholder="Search documentation..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none placeholder-gray-400"
+            className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-orange-600 focus:outline-none placeholder-gray-400"
           />
         </div>
 
@@ -265,7 +265,7 @@ This documentation will help you understand and work with ${localSelectedProject
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`w-full px-3 py-2 text-left rounded-lg transition-colors ${
                   selectedCategory === cat.id 
-                    ? 'bg-purple-600 text-white' 
+                    ? 'bg-orange-700 text-white' 
                     : 'text-gray-300 hover:bg-gray-700'
                 }`}
               >
@@ -292,7 +292,7 @@ This documentation will help you understand and work with ${localSelectedProject
                   }}
                   className={`w-full px-3 py-3 text-left rounded-lg transition-all ${
                     selectedDoc?.id === doc.id
-                      ? 'bg-purple-600 text-white shadow-lg'
+                      ? 'bg-orange-700 text-white shadow-lg'
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
@@ -370,7 +370,7 @@ This documentation will help you understand and work with ${localSelectedProject
                           const inline = !match
                           
                           return inline ? (
-                            <code className="bg-gray-800 text-purple-300 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
+                            <code className="bg-gray-800 text-orange-300 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>
                           ) : (
                             <div className="my-4">
                               {language && (
@@ -481,13 +481,13 @@ This documentation will help you understand and work with ${localSelectedProject
                           
                           // Default blockquote style
                           return (
-                            <blockquote className="border-l-4 border-purple-500 pl-4 my-4 text-gray-300 italic">
+                            <blockquote className="border-l-4 border-orange-700 pl-4 my-4 text-gray-300 italic">
                               {children}
                             </blockquote>
                           )
                         },
                         a: ({href, children}) => (
-                          <a href={href} className="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer">
+                          <a href={href} className="text-orange-400 hover:text-orange-300 underline" target="_blank" rel="noopener noreferrer">
                             {children}
                           </a>
                         ),
